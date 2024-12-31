@@ -1,0 +1,435 @@
+// Générateur du client Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Configuration de la base de données PostgreSQL
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String          @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  Authenticator Authenticator[]
+
+  customerNumber  String  @unique @db.VarChar(10) // Numéro unique attribué au client pour l'identifier
+  firstName       String  @db.VarChar(40)
+  lastName        String  @db.VarChar(40)
+  companyName     String? @db.VarChar(60)
+  vatNumber       String? @db.VarChar(15) // Numéro de TVA (Taxe sur la Valeur Ajoutée) du client
+  companyNumber   String? @db.VarChar(15)
+  exportNumber    String? @db.VarChar(15)
+  isEnabled       Boolean @default(true)
+  phone           String? @db.VarChar(15)
+  mobile          String? @db.VarChar(15)
+  fax             String? @db.VarChar(15)
+  additionalInfo  String? @db.Text
+  paymentTermDays Int     @default(0) // Délai de paiement en jours (0 = paiement immédiat)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  payments       Payment[] // Liste des paiements effectués par le client
+  stockMovements StockMovement[] // Historique des mouvements de stock liés au client
+  invoiceDetails InvoiceDetail[] // Détails des factures associées au client
+
+  @@index([customerNumber, lastName, vatNumber]) // Index pour améliorer les performances des recherches
+  @@map("users")
+}
+
+// Account model
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// Session model
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// VerificationToken model
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Optional for WebAuthn support
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+  @@map("authenticators")
+}
+
+// UserAddress model
+model UserAddress {
+  id            Int @id @default(autoincrement())
+  userId        Int
+  addressId     Int
+  addressTypeId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  address     Address     @relation(fields: [addressId], references: [id])
+  addressType AddressType @relation(fields: [addressTypeId], references: [id])
+
+  @@map("user_addresses")
+}
+
+// Address model
+model Address {
+  id           Int      @id @default(autoincrement())
+  street       String   @db.VarChar(100)
+  complement   String?  @db.VarChar(100)
+  streetNumber String?  @db.VarChar(10)
+  boxNumber    String?  @db.VarChar(10)
+  cityId       Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  city      City          @relation(fields: [cityId], references: [id])
+  customers UserAddress[]
+
+  @@map("addresses")
+}
+
+//  City model
+model City {
+  id        Int    @id @default(autoincrement())
+  cityCode  String @db.VarChar(10)
+  name      String @db.VarChar(50)
+  countryId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  country   Country   @relation(fields: [countryId], references: [id])
+  addresses Address[]
+
+  @@map("cities")
+}
+
+// Country model
+model Country {
+  id          Int    @id @default(autoincrement())
+  countryCode String @unique @db.VarChar(10)
+  name        String @db.VarChar(50)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  cities City[]
+  vats   Vat[]
+
+  @@map("countries")
+}
+
+// AddressType Model
+model AddressType {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  customerAddresses UserAddress[]
+
+  @@map("address_types")
+}
+
+// Item model
+model Item {
+  id                Int     @id @default(autoincrement())
+  itemNumber        String  @unique @db.VarChar(20) // Code unique attribué à l'article pour l'identifier (ex. INV-1234567890123)
+  supplierReference String? @db.VarChar(20) // Référence fournisseur de l'article E.g. REF-1234567890123 (ex. pour les articles fournis par un fournisseur)
+  barcode           String? @db.VarChar(20) // Code-barres associé à l'article E.g. 1234567890123 (ex. pour les articles avec un code-barres)
+  label             String  @db.VarChar(100) // Libellé de l'article eg. "Chaussures de sport"
+  description       String? @db.Text // Description de l'article (ex. pour les articles de chaussures) eg. "Chaussures de sport"
+  purchasePrice     Decimal @db.Decimal(10, 2) // Prix d'achat hors taxes (ex. pour les articles de chaussures) eg. 10 euros
+  retailPrice       Decimal @db.Decimal(10, 2) // Prix de vente au détail hors taxes (ex. pour les articles de chaussures) eg. 10 euros
+  stockQuantity     Int     @default(0) // Quantité disponible en stock (ex. pour les articles de chaussures) eg. 10
+  minQuantity       Int     @default(0) // Quantité minimale avant réapprovisionnement (ex. pour les articles de chaussures) eg. 5
+  vatTypeId         Int // Référence au type de TVA applicable à l'article (ex. HT, TVA, etc.)
+  unitId            Int // Référence à l'unité de mesure (ex. "kg", "pcs")  de l'article
+  classId           Int // Référence à la catégorie ou classe de l'article (ex. "Electronics", "Furniture", etc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  vatType        VatType         @relation(fields: [vatTypeId], references: [id]) // Type de TVA associé à l'article (ex. HT, TVA, etc.)
+  unit           Unit            @relation(fields: [unitId], references: [id]) // Unité de mesure de l'article (ex. "kg", "pcs")
+  itemClass      ItemClass       @relation(fields: [classId], references: [id]) // Catégorie ou classe de l'article (ex. "Electronics", "Furniture", etc.)
+  stockMovements StockMovement[] // Historique des mouvements de stock liés à l'article (ajout, retrait, etc.)
+  invoiceDetails InvoiceDetail[] // Factures contenant cet article (ex. factures d'achat, factures de vente, etc.)
+  itemTaxes      ItemTax[] // Taxes additionnelles appliquées à l'article (ex. taxe sur la valeur ajoutée, taxe sur le prix de vente, etc.)
+
+  @@index([itemNumber, supplierReference, label]) // Index pour faciliter la recherche
+  @@map("items")
+}
+
+// Invoice model
+model Invoice {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  invoiceNumber   String   @unique @db.VarChar(20) // Numéro unique attribué à la facture pour l'identifier (ex. INV-1234567890123)
+  issuedAt        DateTime @default(now()) // Date d'émission de la facture e.g. 2023-01-31  il représente la date à laquelle la facture est émise (émission).
+  dueDate         DateTime // Date limite de paiement pour la facture e.g. 2023-01-31  il représente la date à laquelle la facture est due, c'est-à-dire que la facture est payée (paiement).
+  flag_accounting Boolean  @default(false) // Indique si la facture est comptabilisée (true) ou non (false) dans le système. Par défaut, la facture est comptabilisée.
+  totalAmount     Decimal  @db.Decimal(10, 2) // Montant total hors taxes (HT) e.g. 10 euros
+  totalVatAmount  Decimal  @db.Decimal(10, 2) // Montant total de la TVA e.g. 10 euros
+  totalTtcAmount  Decimal  @db.Decimal(10, 2) // Montant total TTC (HT + TVA) e.g. 20 euros
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  invoiceDetails InvoiceDetail[] // Détails des articles inclus dans la facture
+  payments       Payment[] // Paiements associés à la facture
+
+  @@index([invoiceNumber, issuedAt]) // Index pour accélérer les recherches
+  @@map("invoices")
+}
+
+// InvoiceDetail model
+model InvoiceDetail {
+  id            Int     @id @default(autoincrement())
+  invoiceId     Int
+  itemId        Int // Référence à l'article facturé
+  lineNumber    Int // Numéro de ligne dans la facture
+  quantity      Int     @default(1) // Quantité de l'article facturé
+  discount      Decimal @default(0) @db.Decimal(5, 2) // Remise en pourcentage appliquée à la ligne
+  unitPrice     Decimal @db.Decimal(10, 2) // Prix unitaire hors taxes pour la ligne (ex. pour les articles de chaussures) eg. 10 euros
+  vatBaseAmount Decimal @db.Decimal(10, 2) // Montant HT pour la ligne avant la TVA
+  vatAmount     Decimal @db.Decimal(10, 2) // Montant de la TVA pour la ligne e.g. 10 euros
+  totalPrice    Decimal @db.Decimal(10, 2) // Montant TTC pour la ligne (HT + TVA) e.g. 20 euros
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id]) // Facture associée à cette ligne
+  item    Item    @relation(fields: [itemId], references: [id]) // Article facturé
+  User    User?   @relation(fields: [userId], references: [id])
+  userId  String?
+
+  @@map("invoice_details")
+}
+
+// Payment model
+model Payment {
+  id            Int      @id @default(autoincrement())
+  invoiceId     Int
+  paymentDate   DateTime @default(now())
+  amount        Decimal  @db.Decimal(10, 2)
+  paymentModeId Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  invoice     Invoice     @relation(fields: [invoiceId], references: [id])
+  paymentMode PaymentMode @relation(fields: [paymentModeId], references: [id])
+  customerId  Int
+  User        User[]
+
+  @@map("payments")
+}
+
+// PaymentMode model
+model PaymentMode {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  payments Payment[]
+
+  @@map("payment_modes")
+}
+
+// VatType model representing the type of VAT (eg. High, Low, etc.)
+model VatType {
+  id    Int    @id @default(autoincrement())
+  label String @db.VarChar(50) // Nom ou description du type de TVA (ex. "TVA réduite", "TVA normale")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  items Item[] // Articles auxquels ce type de TVA est appliqué
+  vats  Vat[] // Taux de TVA spécifiques liés à ce type
+
+  @@map("vat_types")
+}
+
+// ItemClass model representing the type of item (eg. Electronics, Furniture, etc.)
+model ItemClass {
+  id        Int      @id @default(autoincrement())
+  label     String   @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // Relations
+  items     Item[]
+
+  @@map("item_classes")
+}
+
+// Unit Model
+model Unit {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(50)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  items Item[]
+
+  @@map("units")
+}
+
+// StockMovement model representing a movement of stock (eg. purchase, sale, etc.)
+model StockMovement {
+  id           Int      @id @default(autoincrement())
+  itemId       Int
+  customerId   Int? // Référence au client qui a effectué le mouvement de stock (si le mouvement est lié à un client)
+  date         DateTime @default(now()) // Date et heure du mouvement de stock
+  quantity     Int // Quantité de stock liée au mouvement
+  movementType String   @db.VarChar(20) // Type de mouvement de stock (achat, vente, etc.)
+  description  String?  @db.Text // Description du mouvement de stock
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  item Item   @relation(fields: [itemId], references: [id])
+  User User[]
+
+  @@map("stock_movements")
+}
+
+// Vat model
+model Vat {
+  id         Int     @id @default(autoincrement())
+  vatTypeId  Int
+  countryId  Int
+  vatPercent Decimal @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  vatType VatType @relation(fields: [vatTypeId], references: [id])
+  country Country @relation(fields: [countryId], references: [id])
+
+  @@unique([vatTypeId, countryId]) // Ensure unique VAT rates per type and country
+  @@map("vats")
+}
+
+// Tax Models
+model UtaxType {
+  id        Int      @id @default(autoincrement())
+  label     String   @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // Relations
+  taxes     Utax[]
+
+  @@map("utax_types")
+}
+
+// Utax model
+model Utax {
+  id         Int    @id @default(autoincrement())
+  label      String @db.VarChar(50)
+  utaxTypeId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  utaxType  UtaxType  @relation(fields: [utaxTypeId], references: [id])
+  itemTaxes ItemTax[]
+
+  @@map("utaxes")
+}
+
+// ItemTax model
+model ItemTax {
+  id     Int     @id @default(autoincrement())
+  itemId Int
+  utaxId Int
+  price  Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  item Item @relation(fields: [itemId], references: [id])
+  utax Utax @relation(fields: [utaxId], references: [id])
+
+  @@map("item_taxes")
+}
