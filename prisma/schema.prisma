@@ -20,7 +20,7 @@ model User {
   sessions      Session[]
   Authenticator Authenticator[]
 
-  customerNumber  String  @unique @db.VarChar(10) // Numéro unique attribué au client pour l'identifier
+  userNumber      String  @unique @db.VarChar(10) // Numéro unique attribué au client pour l'identifier
   firstName       String  @db.VarChar(40)
   lastName        String  @db.VarChar(40)
   companyName     String? @db.VarChar(60)
@@ -42,7 +42,7 @@ model User {
   stockMovements StockMovement[] // Historique des mouvements de stock liés au client
   invoiceDetails InvoiceDetail[] // Détails des factures associées au client
 
-  @@index([customerNumber, lastName, vatNumber]) // Index pour améliorer les performances des recherches
+  @@index([userNumber, lastName, vatNumber]) // Index pour améliorer les performances des recherches
   @@map("users")
 }
 
@@ -121,7 +121,7 @@ model Authenticator {
 
 // UserAddress model
 model UserAddress {
-  id            Int @id @default(autoincrement())
+  id            Int    @id @default(autoincrement())
   userId        String
   addressId     Int
   addressTypeId Int
@@ -195,7 +195,7 @@ model AddressType {
   updatedAt DateTime @updatedAt
 
   // Relations
-  customerAddresses UserAddress[]
+  userAddresses UserAddress[]
 
   @@map("address_types")
 }
@@ -292,7 +292,7 @@ model Payment {
   // Relations
   invoice     Invoice     @relation(fields: [invoiceId], references: [id])
   paymentMode PaymentMode @relation(fields: [paymentModeId], references: [id])
-  customerId  Int
+  userId      String
   User        User[]
 
   @@map("payments")
@@ -356,7 +356,7 @@ model Unit {
 model StockMovement {
   id           Int      @id @default(autoincrement())
   itemId       Int
-  customerId   Int? // Référence au client qui a effectué le mouvement de stock (si le mouvement est lié à un client)
+  userId       String? // Référence au client qui a effectué le mouvement de stock (si le mouvement est lié à un client)
   date         DateTime @default(now()) // Date et heure du mouvement de stock
   quantity     Int // Quantité de stock liée au mouvement
   movementType String   @db.VarChar(20) // Type de mouvement de stock (achat, vente, etc.)

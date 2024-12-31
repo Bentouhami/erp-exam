@@ -1,6 +1,8 @@
+// path : src/lib/validations/PaymentValidations.ts
+
 import {z} from "zod";
 
-
+// PaymentSchema
 export const PaymentsSchema = z.object({
     id: z.number(),
     invoiceId: z.number(),
