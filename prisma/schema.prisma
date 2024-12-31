@@ -122,7 +122,7 @@ model Authenticator {
 // UserAddress model
 model UserAddress {
   id            Int @id @default(autoincrement())
-  userId        Int
+  userId        String
   addressId     Int
   addressTypeId Int
 
@@ -234,7 +234,7 @@ model Item {
 // Invoice model
 model Invoice {
   id              Int      @id @default(autoincrement())
-  userId          Int
+  userId          String
   invoiceNumber   String   @unique @db.VarChar(20) // Numéro unique attribué à la facture pour l'identifier (ex. INV-1234567890123)
   issuedAt        DateTime @default(now()) // Date d'émission de la facture e.g. 2023-01-31  il représente la date à laquelle la facture est émise (émission).
   dueDate         DateTime // Date limite de paiement pour la facture e.g. 2023-01-31  il représente la date à laquelle la facture est due, c'est-à-dire que la facture est payée (paiement).
