@@ -7,7 +7,7 @@ async function seedDatabase() {
     try {
         console.log('Seeding the database...');
 
-        // 1. Ajouter ou vérifier le pays "Belgium"
+        // 1. Add or verify the country "Belgium"
         let belgium = await prisma.country.findUnique({
             where: { countryCode: 'BE' },
         });
@@ -24,7 +24,7 @@ async function seedDatabase() {
             console.log('Country "Belgium" already exists.');
         }
 
-        // 2. Ajouter ou vérifier le pays "France"
+        // 2. Add or verify the country "France"
         let france = await prisma.country.findUnique({
             where: { countryCode: 'FR' },
         });
@@ -41,48 +41,20 @@ async function seedDatabase() {
             console.log('Country "France" already exists.');
         }
 
-        // 3. Ajouter ou vérifier les types de TVA
-        const vatTypes = [
-            { label: 'Reduced VAT' },
-            { label: 'Standard VAT' },
-        ];
-
-        for (const vatType of vatTypes) {
-            const existingVatType = await prisma.vatType.findFirst({
-                where: { label: vatType.label },
-            });
-
-            if (!existingVatType) {
-                await prisma.vatType.create({ data: vatType });
-                console.log(`VatType "${vatType.label}" added.`);
-            } else {
-                console.log(`VatType "${vatType.label}" already exists.`);
-            }
-        }
-
-        // 4. Ajouter ou vérifier les taux de TVA
+        // 3. Add or verify VAT rates
         const vatRates = [
             // Belgium VAT
-            { vatTypeLabel: 'Reduced VAT', vatPercent: 6, countryId: belgium.id },
-            { vatTypeLabel: 'Standard VAT', vatPercent: 21, countryId: belgium.id },
+            { vatType: 'REDUCED', vatPercent: 6, countryId: belgium.id },
+            { vatType: 'STANDARD', vatPercent: 21, countryId: belgium.id },
             // France VAT
-            { vatTypeLabel: 'Reduced VAT', vatPercent: 5.5, countryId: france.id },
-            { vatTypeLabel: 'Standard VAT', vatPercent: 20, countryId: france.id },
+            { vatType: 'REDUCED', vatPercent: 5.5, countryId: france.id },
+            { vatType: 'STANDARD', vatPercent: 20, countryId: france.id },
         ];
 
         for (const vatRate of vatRates) {
-            const vatType = await prisma.vatType.findFirst({
-                where: { label: vatRate.vatTypeLabel },
-            });
-
-            if (!vatType) {
-                console.error(`VatType "${vatRate.vatTypeLabel}" not found.`);
-                continue;
-            }
-
             const existingVat = await prisma.vat.findFirst({
                 where: {
-                    vatTypeId: vatType.id,
+                    vatType: vatRate.vatType,
                     countryId: vatRate.countryId,
                     vatPercent: vatRate.vatPercent,
                 },
@@ -90,29 +62,28 @@ async function seedDatabase() {
 
             if (!existingVat) {
                 await prisma.vat.create({
-                    data: {
-                        vatTypeId: vatType.id,
-                        countryId: vatRate.countryId,
-                        vatPercent: vatRate.vatPercent,
-                    },
+                    data: vatRate,
                 });
                 console.log(
-                    `VAT ${vatRate.vatPercent}% (${vatRate.vatTypeLabel}) added for ${
+                    `VAT ${vatRate.vatPercent}% (${vatRate.vatType}) added for ${
                         vatRate.countryId === belgium.id ? 'Belgium' : 'France'
                     }.`
                 );
             } else {
                 console.log(
-                    `VAT ${vatRate.vatPercent}% (${vatRate.vatTypeLabel}) already exists for ${
+                    `VAT ${vatRate.vatPercent}% (${vatRate.vatType}) already exists for ${
                         vatRate.countryId === belgium.id ? 'Belgium' : 'France'
                     }.`
                 );
             }
         }
 
-        // 5. Charger et insérer les villes pour la Belgique
+        // 4. Load and insert cities for Belgium
         console.log('Loading city data for Belgium...');
-        const belgiumData = fs.readFileSync('public/datas/georef-belgium-postal-codes.json', 'utf-8');
+        const belgiumData = fs.readFileSync(
+            'public/datas/georef-belgium-postal-codes.json',
+            'utf-8'
+        );
         const belgiumJson = JSON.parse(belgiumData);
 
         const belgiumCities = Array.from(
@@ -126,7 +97,7 @@ async function seedDatabase() {
             ).values()
         );
 
-        console.log(`Inserting ${belgiumCities.length} unique cities for Belgium into the database...`);
+        console.log(`Inserting ${belgiumCities.length} unique cities for Belgium...`);
 
         for (const city of belgiumCities) {
             const existingCity = await prisma.city.findFirst({
@@ -141,7 +112,7 @@ async function seedDatabase() {
             }
         }
 
-        // 6. Charger et insérer les villes pour la France
+        // 5. Load and insert cities for France
         console.log('Loading city data for France...');
         const franceData = fs.readFileSync('public/datas/cities.json', 'utf-8');
         const franceJson = JSON.parse(franceData);
@@ -157,7 +128,7 @@ async function seedDatabase() {
             ).values()
         );
 
-        console.log(`Inserting ${franceCities.length} unique cities for France into the database...`);
+        console.log(`Inserting ${franceCities.length} unique cities for France...`);
 
         for (const city of franceCities) {
             const existingCity = await prisma.city.findFirst({

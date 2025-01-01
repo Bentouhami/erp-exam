@@ -9,6 +9,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums
+enum AddressType {
+  HOME
+  OFFICE
+  BILLING
+  SHIPPING
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+  RETURN
+  TRANSFER
+  ADJUSTMENT
+}
+
+enum TokenType {
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+  TWO_FACTOR_AUTH
+}
+
+enum UtaxType {
+  LUXURY
+  BASIC
+  SPECIAL
+}
+
+enum PaymentMode {
+  CASH
+  CREDIT_CARD
+  BANK_TRANSFER
+  PAYPAL
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+}
+
+enum VatType {
+  REDUCED
+  STANDARD
+  EXEMPT
+}
+
+enum ItemType {
+  PHYSICAL
+  DIGITAL
+}
+
+enum ItemStatus {
+  ACTIVE
+  INACTIVE
+}
+
 // User model
 model User {
   id            String          @id @default(cuid())
@@ -33,6 +91,7 @@ model User {
   fax             String? @db.VarChar(15)
   additionalInfo  String? @db.Text
   paymentTermDays Int     @default(0) // Délai de paiement en jours (0 = paiement immédiat)
+  roles           Roles[] @default([CUSTOMER]) // Roles de l'utilisateur (ex. CUSTOMER, ADMIN, etc.)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -42,8 +101,25 @@ model User {
   stockMovements StockMovement[] // Historique des mouvements de stock liés au client
   invoiceDetails InvoiceDetail[] // Détails des factures associées au client
 
+  UserAddress           UserAddress[]
+  UserVerificationToken UserVerificationToken[]
+
   @@index([userNumber, lastName, vatNumber]) // Index pour améliorer les performances des recherches
   @@map("users")
+}
+
+// User Roles
+enum Roles {
+  CUSTOMER
+  ADMIN
+  STAFF
+  ACCOUNTANT
+  WAREHOUSE_MANAGER
+  SALES_REP
+  SUPPORT_AGENT
+  SUPER_ADMIN
+
+  @@map("roles")
 }
 
 // Account model
@@ -98,6 +174,20 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+model UserVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String // Direct reference to User
+  token     String    @unique
+  type      TokenType // enum for different token types
+  expires   DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id]) // Relation to User
+
+  @@map("user_verification_tokens")
+}
+
 // Optional for WebAuthn support
 model Authenticator {
   credentialID         String  @unique
@@ -121,17 +211,17 @@ model Authenticator {
 
 // UserAddress model
 model UserAddress {
-  id            Int    @id @default(autoincrement())
-  userId        String
-  addressId     Int
-  addressTypeId Int
-
+  id        Int      @id @default(autoincrement())
+  userId    String
+  addressId Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
+  user User @relation(fields: [userId], references: [id]) // Connects to User
+
   address     Address     @relation(fields: [addressId], references: [id])
-  addressType AddressType @relation(fields: [addressTypeId], references: [id])
+  addressType AddressType
 
   @@map("user_addresses")
 }
@@ -148,8 +238,8 @@ model Address {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  city      City          @relation(fields: [cityId], references: [id])
-  customers UserAddress[]
+  city          City          @relation(fields: [cityId], references: [id])
+  userAddresses UserAddress[]
 
   @@map("addresses")
 }
@@ -187,19 +277,6 @@ model Country {
   @@map("countries")
 }
 
-// AddressType Model
-model AddressType {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(50)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  userAddresses UserAddress[]
-
-  @@map("address_types")
-}
-
 // Item model
 model Item {
   id                Int     @id @default(autoincrement())
@@ -212,7 +289,6 @@ model Item {
   retailPrice       Decimal @db.Decimal(10, 2) // Prix de vente au détail hors taxes (ex. pour les articles de chaussures) eg. 10 euros
   stockQuantity     Int     @default(0) // Quantité disponible en stock (ex. pour les articles de chaussures) eg. 10
   minQuantity       Int     @default(0) // Quantité minimale avant réapprovisionnement (ex. pour les articles de chaussures) eg. 5
-  vatTypeId         Int // Référence au type de TVA applicable à l'article (ex. HT, TVA, etc.)
   unitId            Int // Référence à l'unité de mesure (ex. "kg", "pcs")  de l'article
   classId           Int // Référence à la catégorie ou classe de l'article (ex. "Electronics", "Furniture", etc.)
 
@@ -220,7 +296,7 @@ model Item {
   updatedAt DateTime @updatedAt
 
   // Relations
-  vatType        VatType         @relation(fields: [vatTypeId], references: [id]) // Type de TVA associé à l'article (ex. HT, TVA, etc.)
+  vatType        VatType
   unit           Unit            @relation(fields: [unitId], references: [id]) // Unité de mesure de l'article (ex. "kg", "pcs")
   itemClass      ItemClass       @relation(fields: [classId], references: [id]) // Catégorie ou classe de l'article (ex. "Electronics", "Furniture", etc.)
   stockMovements StockMovement[] // Historique des mouvements de stock liés à l'article (ajout, retrait, etc.)
@@ -281,49 +357,20 @@ model InvoiceDetail {
 
 // Payment model
 model Payment {
-  id            Int      @id @default(autoincrement())
-  invoiceId     Int
-  paymentDate   DateTime @default(now())
-  amount        Decimal  @db.Decimal(10, 2)
-  paymentModeId Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  invoiceId   Int
+  paymentDate DateTime @default(now())
+  amount      Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
   invoice     Invoice     @relation(fields: [invoiceId], references: [id])
-  paymentMode PaymentMode @relation(fields: [paymentModeId], references: [id])
+  paymentMode PaymentMode
   userId      String
   User        User[]
 
   @@map("payments")
-}
-
-// PaymentMode model
-model PaymentMode {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique @db.VarChar(50)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  payments Payment[]
-
-  @@map("payment_modes")
-}
-
-// VatType model representing the type of VAT (eg. High, Low, etc.)
-model VatType {
-  id    Int    @id @default(autoincrement())
-  label String @db.VarChar(50) // Nom ou description du type de TVA (ex. "TVA réduite", "TVA normale")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  items Item[] // Articles auxquels ce type de TVA est appliqué
-  vats  Vat[] // Taux de TVA spécifiques liés à ce type
-
-  @@map("vat_types")
 }
 
 // ItemClass model representing the type of item (eg. Electronics, Furniture, etc.)
@@ -354,15 +401,15 @@ model Unit {
 
 // StockMovement model representing a movement of stock (eg. purchase, sale, etc.)
 model StockMovement {
-  id           Int      @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
   itemId       Int
   userId       String? // Référence au client qui a effectué le mouvement de stock (si le mouvement est lié à un client)
-  date         DateTime @default(now()) // Date et heure du mouvement de stock
+  date         DateTime     @default(now()) // Date et heure du mouvement de stock
   quantity     Int // Quantité de stock liée au mouvement
-  movementType String   @db.VarChar(20) // Type de mouvement de stock (achat, vente, etc.)
-  description  String?  @db.Text // Description du mouvement de stock
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  movementType MovementType
+  description  String?      @db.Text // Description du mouvement de stock
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   // Relations
   item Item   @relation(fields: [itemId], references: [id])
@@ -374,7 +421,6 @@ model StockMovement {
 // Vat model
 model Vat {
   id         Int     @id @default(autoincrement())
-  vatTypeId  Int
   countryId  Int
   vatPercent Decimal @db.Decimal(5, 2)
 
@@ -382,36 +428,23 @@ model Vat {
   updatedAt DateTime @updatedAt
 
   // Relations
-  vatType VatType @relation(fields: [vatTypeId], references: [id])
+  vatType VatType
   country Country @relation(fields: [countryId], references: [id])
 
-  @@unique([vatTypeId, countryId]) // Ensure unique VAT rates per type and country
+  @@unique([id, countryId]) // Ensure unique VAT rates per id and country
   @@map("vats")
-}
-
-// Tax Models
-model UtaxType {
-  id        Int      @id @default(autoincrement())
-  label     String   @db.VarChar(50)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  // Relations
-  taxes     Utax[]
-
-  @@map("utax_types")
 }
 
 // Utax model
 model Utax {
-  id         Int    @id @default(autoincrement())
-  label      String @db.VarChar(50)
-  utaxTypeId Int
+  id    Int    @id @default(autoincrement())
+  label String @db.VarChar(50)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  utaxType  UtaxType  @relation(fields: [utaxTypeId], references: [id])
+  utaxType  UtaxType
   itemTaxes ItemTax[]
 
   @@map("utaxes")

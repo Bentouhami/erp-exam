@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "roles" AS ENUM ('CUSTOMER', 'ADMIN', 'STAFF', 'ACCOUNTANT', 'WAREHOUSE_MANAGER', 'SALES_REP', 'SUPPORT_AGENT', 'SUPER_ADMIN');
+
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "roles" "roles"[] DEFAULT ARRAY['CUSTOMER']::"roles"[];
