@@ -11,14 +11,16 @@ import {ItemCreateDTO} from "@/services/dtos/ItemDtos";
  * @param req - The request object
  * @returns A response object with the status code and the created article
  */
-
 export async function POST(req: NextRequest) {
     if (req.method !== "POST") {
-        return new Response("Method not allowed", {status: 405});
+        return new Response("Method not allowed", { status: 405 });
     }
 
     try {
-        const data : ItemCreateDTO = await req.json();
+        const data: ItemCreateDTO = await req.json();
+
+
+        console.log("log ====> data in POST route in path src/app/api/v1/items/route.ts is : ", data);
 
         const response = await prisma.item.create({
             data: {
@@ -27,25 +29,27 @@ export async function POST(req: NextRequest) {
                 barcode: data.barcode,
                 label: data.label,
                 description: data.description,
-                purchasePrice: data.purchasePrice,
-                retailPrice: data.retailPrice,
-                stockQuantity: data.stockQuantity,
-                minQuantity: data.minQuantity,
-                unitId: data.unitId,
-                classId: data.classId,
-                vatType: data.vatType,
+                purchasePrice: Number(data.purchasePrice),
+                retailPrice: Number(data.retailPrice),
+                stockQuantity: Number(data.stockQuantity),
+                minQuantity: Number(data.minQuantity),
+                unitId: Number(data.unitId),
+                classId: Number(data.classId),
+                vatType: data.vatType, // Enum value directly inserted
+            },
+            include: {
+               stockMovements: true,
+               invoiceDetails: true,
+               itemTaxes: true,
             },
         });
-        if (!response) {
-            return NextResponse.json("Article not found", {status: 404}); // 404 Not Found
-        }
 
-        const item = response;
-        return NextResponse.json({item}, {
-            status: 201,
-        }); // 201 Created
+        console.log("log ====> response in POST route in path src/app/api/v1/items/route.ts is : ", response);
+
+        return NextResponse.json({ item: response }, { status: 201 }); // 201 Created
     } catch (error) {
-        return new Response("Internal server error", {status: 500}); // 500 Internal Server Error
+        console.error("Error creating item:", error);
+        return new Response("Internal server error", { status: 500 }); // 500 Internal Server Error
     }
 }
 

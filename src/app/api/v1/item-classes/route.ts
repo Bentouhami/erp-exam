@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
             select: {
                 id: true,
                 label: true,
+                items: true,
             }
         });
         if (!itemClasses) {

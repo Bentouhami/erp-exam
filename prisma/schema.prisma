@@ -284,13 +284,15 @@ model Item {
   supplierReference String? @db.VarChar(20) // Référence fournisseur de l'article E.g. REF-1234567890123 (ex. pour les articles fournis par un fournisseur)
   barcode           String? @db.VarChar(20) // Code-barres associé à l'article E.g. 1234567890123 (ex. pour les articles avec un code-barres)
   label             String  @db.VarChar(100) // Libellé de l'article eg. "Chaussures de sport"
-  description       String? @db.Text // Description de l'article (ex. pour les articles de chaussures) eg. "Chaussures de sport"
-  purchasePrice     Decimal @db.Decimal(10, 2) // Prix d'achat hors taxes (ex. pour les articles de chaussures) eg. 10 euros
-  retailPrice       Decimal @db.Decimal(10, 2) // Prix de vente au détail hors taxes (ex. pour les articles de chaussures) eg. 10 euros
-  stockQuantity     Int     @default(0) // Quantité disponible en stock (ex. pour les articles de chaussures) eg. 10
-  minQuantity       Int     @default(0) // Quantité minimale avant réapprovisionnement (ex. pour les articles de chaussures) eg. 5
-  unitId            Int // Référence à l'unité de mesure (ex. "kg", "pcs")  de l'article
-  classId           Int // Référence à la catégorie ou classe de l'article (ex. "Electronics", "Furniture", etc.)
+  image             String? // URL or path to the item's image
+
+  description   String? @db.Text // Description de l'article (ex. pour les articles de chaussures) eg. "Chaussures de sport"
+  purchasePrice Decimal @db.Decimal(10, 2) // Prix d'achat hors taxes (ex. pour les articles de chaussures) eg. 10 euros
+  retailPrice   Decimal @db.Decimal(10, 2) // Prix de vente au détail hors taxes (ex. pour les articles de chaussures) eg. 10 euros
+  stockQuantity Int     @default(0) // Quantité disponible en stock (ex. pour les articles de chaussures) eg. 10
+  minQuantity   Int     @default(0) // Quantité minimale avant réapprovisionnement (ex. pour les articles de chaussures) eg. 5
+  unitId        Int // Référence à l'unité de mesure (ex. "kg", "pcs")  de l'article
+  classId       Int // Référence à la catégorie ou classe de l'article (ex. "Electronics", "Furniture", etc.)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -388,7 +390,7 @@ model ItemClass {
 // Unit Model
 model Unit {
   id   Int    @id @default(autoincrement())
-  name String @db.VarChar(50)
+  name String @unique @db.VarChar(50)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

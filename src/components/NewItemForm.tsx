@@ -11,10 +11,12 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from '@/comp
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
 import {Label} from '@/components/ui/label';
 import {useToast} from '@/hooks/use-toast';
+import {ItemCreateDTO} from "@/services/dtos/ItemDtos";
+import {VatType} from "@/services/dtos/EnumsDtos";
 
 interface NewItemFormProps {
     units: Array<{ id: number; name: string }>;
-    itemClasses: Array<{ id: number; name: string }>;
+    itemClasses: Array<{ id: number; label: string }>;
     vatTypes: Array<{
         id: number;
         vatPercent: string;
@@ -22,27 +24,27 @@ interface NewItemFormProps {
         countryId: number;
         country: { id: number; countryCode: string; name: string }
     }>;
-    onSubmit: (data: any) => Promise<void>;
+    onSubmit: (data: ItemCreateDTO) => Promise<void>;
 }
 
 export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: NewItemFormProps) {
     const {toast} = useToast();
     const [loading, setLoading] = useState(false);
     const [generatedItemNumber, setGeneratedItemNumber] = useState<string>('');
-    const [formData, setFormData] = useState({
-
+    const [formData, setFormData] = useState<Omit<ItemCreateDTO, 'vatType'>>({
+        itemNumber: '',
         supplierReference: '',
         barcode: '',
         label: '',
         description: '',
-        purchasePrice: '',
-        retailPrice: '',
-        stockQuantity: '0',
-        minQuantity: '0',
-        unitId: '',
-        classId: '',
-        vatTypeId: ''
+        purchasePrice: 0,
+        retailPrice: 0,
+        stockQuantity: 0,
+        minQuantity: 0,
+        unitId: 0,
+        classId: 0,
     });
+    const [selectedVatType, setSelectedVatType] = useState<VatType>(VatType.STANDARD); // Default to STANDARD
     const [selectedCountry, setSelectedCountry] = useState('');
     const [filteredVatTypes, setFilteredVatTypes] = useState(vatTypes);
 
@@ -51,7 +53,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
             const response = await fetch('/api/v1/items/generate-number');
             const data = await response.json();
             console.log(data);
-            setGeneratedItemNumber(data.itemNumber);
+            setGeneratedItemNumber(data.itemNumber.itemNumber);
 
             console.log(generatedItemNumber);
         };
@@ -63,14 +65,12 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
         setLoading(true);
 
         try {
+            const supplierReference = formData.supplierReference || `REF-${Date.now().toString().slice(-5)}`;
+
             await onSubmit({
                 ...formData,
-                purchasePrice: parseFloat(formData.purchasePrice),
-                retailPrice: parseFloat(formData.retailPrice),
-                stockQuantity: parseInt(formData.stockQuantity),
-                minQuantity: parseInt(formData.minQuantity),
-                unitId: parseInt(formData.unitId),
-                classId: parseInt(formData.classId),
+                vatType: selectedVatType,
+                itemNumber: generatedItemNumber,
             });
 
             toast({
@@ -80,18 +80,20 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
 
             // Reset form
             setFormData({
+                itemNumber: '',
                 supplierReference: '',
                 barcode: '',
                 label: '',
                 description: '',
-                purchasePrice: '',
-                retailPrice: '',
-                stockQuantity: '0',
-                minQuantity: '0',
-                unitId: '',
-                classId: '',
-                vatTypeId: ''
+                purchasePrice: 0,
+                retailPrice: 0,
+                stockQuantity: 0,
+                minQuantity: 0,
+                unitId: 0,
+                classId: 0,
             });
+            setSelectedVatType(VatType.STANDARD); // Reset the selected vat type
+
         } catch (error) {
             toast({
                 title: "Erreur lors de la création",
@@ -102,6 +104,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
             setLoading(false);
         }
     };
+
     // Fetch the item number when the form loads
     useEffect(() => {
         const fetchItemNumber = async () => {
@@ -242,7 +245,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                                     }}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionner un pays" />
+                                        <SelectValue placeholder="Sélectionner un pays"/>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {Array.from(new Set(vatTypes.map((vat) => vat.country.countryCode))).map(
@@ -260,22 +263,23 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                             <div className="space-y-2">
                                 <Label htmlFor="vatTypeId">TVA *</Label>
                                 <Select
-                                    value={formData.vatTypeId}
-                                    onValueChange={(value) => handleSelectChange('vatTypeId', value)}
+                                    value={selectedVatType}
+                                    onValueChange={(value) => setSelectedVatType(value as VatType)} // Ensure enum value is set
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Sélectionner TVA" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {filteredVatTypes.map((vat) => (
-                                            <SelectItem key={vat.id} value={vat.id.toString()}>
+                                            <SelectItem key={vat.id} value={vat.vatType}>
                                                 {vat.vatType} ({vat.vatPercent}%)
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+
                             </div>
-                            </CardContent>
+                        </CardContent>
                     </div>
 
                     {/* Stock Management */}
@@ -332,7 +336,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                                 <SelectContent>
                                     {itemClasses.map((itemClass) => (
                                         <SelectItem key={itemClass.id} value={itemClass.id.toString()}>
-                                            {itemClass.name}
+                                            {itemClass.label}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

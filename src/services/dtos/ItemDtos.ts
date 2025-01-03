@@ -27,9 +27,24 @@ export interface ItemDTO {
     invoiceDetails: InvoiceDetailsDTO[];
     itemTaxes: ItemTaxDTO[];
 }
+//
+// export interface ItemCreateDTO extends Required<Omit<ItemDTO, "id">> {
+//
+// }
 
-export interface ItemCreateDTO extends Omit<ItemDTO, "id"> {
-    id: number;
+export interface  ItemCreateDTO  {
+    itemNumber: string;
+    supplierReference?: string;
+    barcode?: string;
+    label: string;
+    description?: string;
+    purchasePrice: number;
+    retailPrice: number;
+    stockQuantity: number;
+    minQuantity: number;
+    unitId: number;
+    classId: number;
+    vatType: VatType;
 }
 
 export interface ItemUpdateDTO extends Partial<Omit<ItemDTO, "id">> {
