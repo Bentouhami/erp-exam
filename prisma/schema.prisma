@@ -10,6 +10,20 @@ datasource db {
 }
 
 // Enums
+
+enum Roles {
+  CUSTOMER
+  ADMIN
+  STAFF
+  ACCOUNTANT
+  WAREHOUSE_MANAGER
+  SALES_REP
+  SUPPORT_AGENT
+  SUPER_ADMIN
+
+  @@map("roles")
+}
+
 enum AddressType {
   HOME
   OFFICE
@@ -106,20 +120,6 @@ model User {
 
   @@index([userNumber, lastName, vatNumber]) // Index pour améliorer les performances des recherches
   @@map("users")
-}
-
-// User Roles
-enum Roles {
-  CUSTOMER
-  ADMIN
-  STAFF
-  ACCOUNTANT
-  WAREHOUSE_MANAGER
-  SALES_REP
-  SUPPORT_AGENT
-  SUPER_ADMIN
-
-  @@map("roles")
 }
 
 // Account model

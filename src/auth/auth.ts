@@ -1,55 +1,16 @@
-import NextAuth, {Session, User} from "next-auth"
+import NextAuth, {Session} from "next-auth"
 import {JWT} from "next-auth/jwt";
 import Google from "next-auth/providers/google"
 import Github from "next-auth/providers/github"
 import Credentials from "next-auth/providers/credentials"
-import {generateUniqueUserNumber, getUserByEmail, getUserFromDb} from "@/services/UserService";
-import {LoginDTO, Roles} from "@/services/dtos/UserDtos";
-import {saltAndHashPassword} from "@/utils/auth-helper";
-import {UserAddressDTO} from "@/services/dtos/AddressDtos";
+import {generateUniqueUserNumber, getUserFromDb} from "@/services/UserService";
+import {LoginDTO} from "@/services/dtos/UserDtos";
+import {saltAndHashPassword} from "@/lib/utils/auth-helper";
 
 
 export const {handlers, signIn, signOut, auth} = NextAuth({
     providers: [
-        Google({
-            clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-            authorization: {
-                params: {
-                    prompt: "consent",
-                    access_type: "offline",
-                    scope: "openid email profile",
-                },
-            },
-
-            async profile(profile) {
-
-                const [firstName, lastName] = profile.name?.split(" ") || ["", ""];
-
-                // check if user exists
-                const existingUser = await getUserByEmail(
-                    profile.email as string);
-                if (existingUser) {
-                    return existingUser;
-                }
-                // if not, create new user
-                const userNumber = await generateUniqueUserNumber();
-                return {
-                    id: profile.sub,
-                    email: profile.email,
-                    userNumber,
-                    name: profile.name,
-                    firstName: profile.given_name || firstName,
-                    lastName: profile.family_name || lastName,
-                    image: profile.picture,
-                    phoneNumber: null,
-                    roles: Roles.CUSTOMER, // Assign default role using Roles enum
-                    isVerified: false,
-                }
-            }
-
-        }),
-
+        Google,
         Github,
         Credentials({
             // You can specify which fields should be submitted, by adding keys to the `credentials` object.
@@ -90,7 +51,8 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
 
     ],
     callbacks: {
-        async jwt({ token, user }): Promise<JWT> {
+
+        async jwt({token, user}): Promise<JWT> {
             if (user) {
                 token.id = user.id as string;
                 token.userNumber = user.userNumber;
@@ -98,7 +60,7 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
             }
             return token;
         },
-        async session({ session, token }): Promise<Session> {
+        async session({session, token}): Promise<Session> {
             session.user = {
                 ...session.user,
                 id: token.id as string,

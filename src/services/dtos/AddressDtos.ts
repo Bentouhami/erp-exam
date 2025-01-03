@@ -2,14 +2,14 @@
 
 /** Base interfaces for common fields */
 interface BaseDTO {
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 /** Country DTO */
 export interface CountryDTO extends BaseDTO {
     id?: number;
-    countryCode: string;
+    countryCode?: string;
     name: string;
 }
 

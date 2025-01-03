@@ -1,3 +1,5 @@
+// path: src/lib/validations/InvoiceValidations.ts
+
 import {z} from "zod";
 import {InvoiceDetailsSchema} from "@/lib/validations/InvoiceDetailsValidations";
 import {PaymentsSchema} from "@/lib/validations/PaymentValidations";
@@ -47,3 +49,8 @@ export const InvoiceUpdateSchema = z.object({
     payments: z.array(PaymentsSchema).nonempty("Payments are required").optional(),
 
 })
+
+// export types
+export type Invoice = z.infer<typeof InvoiceSchema>;
+export type InvoiceCreate = z.infer<typeof InvoiceCreateSchema>;
+export type InvoiceUpdate = z.infer<typeof InvoiceUpdateSchema>;
