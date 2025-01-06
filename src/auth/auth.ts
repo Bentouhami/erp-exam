@@ -1,11 +1,9 @@
-import NextAuth, {Session} from "next-auth"
+import NextAuth, {Session, User} from "next-auth"
 import {JWT} from "next-auth/jwt";
 import Google from "next-auth/providers/google"
 import Github from "next-auth/providers/github"
 import Credentials from "next-auth/providers/credentials"
-import {generateUniqueUserNumber, getUserFromDb} from "@/services/UserService";
-import {LoginDTO} from "@/services/dtos/UserDtos";
-import {saltAndHashPassword} from "@/lib/utils/auth-helper";
+import apiCalls from "@/services/apiCalls";
 
 
 export const {handlers, signIn, signOut, auth} = NextAuth({
@@ -13,50 +11,51 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
         Google,
         Github,
         Credentials({
-            // You can specify which fields should be submitted, by adding keys to the `credentials` object.
-            // e.g. domain, username, password, 2FA token, etc.
             name: "credentials",
             credentials: {
                 email: {label: "Email", type: "email"},
                 password: {label: "Password", type: "password"},
             },
-            authorize: async (credentials) => {
-                let user = null
+            async authorize(credentials): Promise<User | null> {
+                try {
+                    // 1. Call the login route via apiCalls
+                    const user = await apiCalls.getUserByEmail({
+                        email: credentials.email as string,
+                        password: credentials.password as string,
+                    });
 
-                // logic to salt and hash password
-                const pwHash = await saltAndHashPassword(credentials.password as string)
+                    // 2. Return the user if login is successful
+                    if (user) {
+                        console.log("user found by email and or phone number in isUserAlreadyExist function in path: src/app/api/v1/users/verify/route.ts: ", user);
 
-                // set data login
-                const loginData: LoginDTO = {
-                    email: credentials.email as string,
-                    pwHash: pwHash,
+                        return {
+                            id: user.id,
+                            name: `${user.firstName} ${user.lastName}`,
+                            email: user.email,
+                            role: user.role,
+                            userNumber: user.userNumber,
+                        };
+                    }
+
+                    console.log("user not found by email and or phone number in isUserAlreadyExist function in path: src/app/api/v1/users/verify/route.ts return NULL");
+
+
+                    return null; // Return null if no user is found
+                } catch (error) {
+                    console.error("Error during login:", error);
+                    throw new Error("Invalid credentials.");
                 }
-                // logic to verify if the user exists
-                user = await getUserFromDb(loginData)
-
-                if (!user) {
-                    // No user found, so this is their first attempt to login
-                    // Optionally, this is also the place you could do a user registration
-                    throw new Error("Invalid credentials.")
-                }
-
-                // return user object with their profile data
-                return {
-                    ...user,
-                    userNumber: user.userNumber || (await generateUniqueUserNumber()), // Assign userNumber if missing
-                };
-
             },
         }),
-
     ],
     callbacks: {
-
         async jwt({token, user}): Promise<JWT> {
             if (user) {
-                token.id = user.id as string;
+                token.id = user.id ? user.id.toString() : null;
                 token.userNumber = user.userNumber;
-                token.roles = user.roles;
+                token.role = user.role;
+                token.email = user.email!; // Ensure email is always defined
+                token.name = user.name;
             }
             return token;
         },
@@ -65,12 +64,13 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
                 ...session.user,
                 id: token.id as string,
                 userNumber: token.userNumber,
-                roles: token.roles,
+                role: token.role,
+                email: token.email,
+                name: token.name,
             };
             return session;
         },
     },
     secret: process.env.NEXTAUTH_SECRET,
     debug: process.env.NODE_ENV !== "production",
-    trustHost: true,
 });

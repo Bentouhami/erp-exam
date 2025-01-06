@@ -11,14 +11,10 @@ datasource db {
 
 // Enums
 
-enum Roles {
+enum Role {
   CUSTOMER
   ADMIN
-  STAFF
   ACCOUNTANT
-  WAREHOUSE_MANAGER
-  SALES_REP
-  SUPPORT_AGENT
   SUPER_ADMIN
 
   @@map("roles")
@@ -92,20 +88,22 @@ model User {
   sessions      Session[]
   Authenticator Authenticator[]
 
-  userNumber      String  @unique @db.VarChar(10) // Numéro unique attribué au client pour l'identifier
+  userNumber      String? @unique
   firstName       String  @db.VarChar(40)
   lastName        String  @db.VarChar(40)
+  password        String?
   companyName     String? @db.VarChar(60)
   vatNumber       String? @db.VarChar(15) // Numéro de TVA (Taxe sur la Valeur Ajoutée) du client
   companyNumber   String? @db.VarChar(15)
   exportNumber    String? @db.VarChar(15)
   isEnabled       Boolean @default(true)
-  phone           String? @db.VarChar(15)
-  mobile          String? @db.VarChar(15)
-  fax             String? @db.VarChar(15)
+  isVerified      Boolean @default(false)
+  phone           String? @unique
+  mobile          String? @unique
+  fax             String? @unique
   additionalInfo  String? @db.Text
   paymentTermDays Int     @default(0) // Délai de paiement en jours (0 = paiement immédiat)
-  roles           Roles[] @default([CUSTOMER]) // Roles de l'utilisateur (ex. CUSTOMER, ADMIN, etc.)
+  role            Role    @default(CUSTOMER)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -12,7 +12,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/
 import {Label} from '@/components/ui/label';
 import {useToast} from '@/hooks/use-toast';
 import {ItemCreateDTO} from "@/services/dtos/ItemDtos";
-import {VatType} from "@/services/dtos/EnumsDtos";
+import {VatTypeDTO} from "@/services/dtos/EnumsDtos";
 
 interface NewItemFormProps {
     units: Array<{ id: number; name: string }>;
@@ -44,7 +44,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
         unitId: 0,
         classId: 0,
     });
-    const [selectedVatType, setSelectedVatType] = useState<VatType>(VatType.STANDARD); // Default to STANDARD
+    const [selectedVatType, setSelectedVatType] = useState<VatTypeDTO>(VatTypeDTO.STANDARD); // Default to STANDARD
     const [selectedCountry, setSelectedCountry] = useState('');
     const [filteredVatTypes, setFilteredVatTypes] = useState(vatTypes);
 
@@ -92,7 +92,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                 unitId: 0,
                 classId: 0,
             });
-            setSelectedVatType(VatType.STANDARD); // Reset the selected vat type
+            setSelectedVatType(VatTypeDTO.STANDARD); // Reset the selected vat type
 
         } catch (error) {
             toast({
@@ -264,14 +264,14 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                                 <Label htmlFor="vatTypeId">TVA *</Label>
                                 <Select
                                     value={selectedVatType}
-                                    onValueChange={(value) => setSelectedVatType(value as VatType)} // Ensure enum value is set
+                                    onValueChange={(value) => setSelectedVatType(value as VatTypeDTO)} // Ensure enum value is set
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Sélectionner TVA" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {filteredVatTypes.map((vat) => (
-                                            <SelectItem key={vat.id} value={vat.vatType}>
+                                            <SelectItem key={vat.id} value={vat.vatType ? vat.vatType.toString() : ""}>
                                                 {vat.vatType} ({vat.vatPercent}%)
                                             </SelectItem>
                                         ))}
@@ -309,7 +309,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                         <div className="space-y-2">
                             <Label htmlFor="unitId">Unité *</Label>
                             <Select
-                                value={formData.unitId}
+                                value={formData.unitId ? formData.unitId.toString() : ""}
                                 onValueChange={(value) => handleSelectChange('unitId', value)}
                             >
                                 <SelectTrigger>
@@ -327,7 +327,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                         <div className="space-y-2">
                             <Label htmlFor="classId">Catégorie *</Label>
                             <Select
-                                value={formData.classId}
+                                value={formData.classId ? formData.classId.toString() : ""}
                                 onValueChange={(value) => handleSelectChange('classId', value)}
                             >
                                 <SelectTrigger>

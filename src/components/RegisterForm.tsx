@@ -1,60 +1,95 @@
 // path: src/components/RegisterForm.tsx
 "use client"
 
-import {useState} from "react"
+import React, {useState} from "react"
 import {useRouter} from "next/navigation"
 import {Button} from "@/components/ui/button"
-import {Input} from "@/components/ui/input"
-import {Label} from "@/components/ui/label"
+import {PersonalInfoForm} from "./PersonalInfoForm"
+import {AccountSetupForm} from "./AccountSetupForm"
+import {StepIndicator} from "./StepIndicator"
+import apiCalls from "@/services/apiCalls";
+import {CreateAdminDTO} from "@/services/dtos/UserDtos";
 
 export function RegisterForm() {
-    const [name, setName] = useState("")
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
+    const [step, setStep] = useState(1)
+
+    const [formData, setFormData] = useState({
+        firstName: "",
+        lastName: "",
+        phone: "",
+        mobile: "",
+        email: "",
+        password: "",
+    })
     const router = useRouter()
+
+    const updateFormData = (newData: Partial<typeof formData>) => {
+        setFormData(prevData => ({...prevData, ...newData}))
+    }
+
+    const handleNext = () => {
+        setStep(prevStep => prevStep + 1)
+    }
+
+    const handlePrevious = () => {
+        setStep(prevStep => prevStep - 1)
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        // Ici, vous implémenteriez la logique d'inscription
-        console.log("Tentative d'inscription avec:", name, email, password)
-        // Redirection vers la page de connexion après inscription réussie
-        router.push("/login")
+        console.log("Tentative d'inscription avec:", formData)
+        // send datas to creat new user in db and NOT a new CLIENT !
+        const userData: CreateAdminDTO = {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            mobile: formData.mobile,
+            password: formData.password,
+        }
+        const newUser = await apiCalls.createAdmin(formData)
+        console.log("newUser", newUser)
+
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md">
-            <div>
-                <Label htmlFor="name">Nom</Label>
-                <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
+        <form onSubmit={handleSubmit} className="space-y-8 w-full max-w-md px-4">
+            <StepIndicator currentStep={step}/>
+
+            {step === 1 && (
+                <PersonalInfoForm
+                    formData={formData}
+                    updateFormData={updateFormData}
                 />
-            </div>
-            <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+            )}
+
+            {step === 2 && (
+                <AccountSetupForm
+                    formData={formData}
+                    updateFormData={updateFormData}
                 />
+            )}
+
+            <div className="flex justify-between">
+                {step > 1 && (
+                    <Button type="button" onClick={handlePrevious}>
+                        Précédent
+                    </Button>
+                )}
+                {step < 2 ? (
+                    <Button type="button" onClick={handleNext} className="ml-auto">
+                        Suivant
+                    </Button>
+                ) : (
+                    <Button type="submit" className="ml-auto">
+                        S'inscrire
+                    </Button>
+                )}
             </div>
-            <div>
-                <Label htmlFor="password">Mot de passe</Label>
-                <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-            </div>
-            <Button type="submit" className="w-full">S'inscrire</Button>
         </form>
     )
 }
+
+
+
 

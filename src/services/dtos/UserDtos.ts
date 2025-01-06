@@ -1,21 +1,25 @@
 // path: src/services/dtos/UserDtos.ts
-// src/services/dtos/UserDtos.ts
 
-// Enums
+
+
 import {UserAddressDTO} from "@/services/dtos/AddressDtos";
+import {RoleDTO} from "@/services/dtos/EnumsDtos";
 
-export enum Roles {
-    CUSTOMER = 'CUSTOMER',
-    ADMIN = 'ADMIN',
-    STAFF = 'STAFF',
-    ACCOUNTANT = 'ACCOUNTANT',
-    WAREHOUSE_MANAGER = 'WAREHOUSE_MANAGER',
-    SALES_REP = 'SALES_REP',
-    SUPPORT_AGENT = 'SUPPORT_AGENT',
-    SUPER_ADMIN = 'SUPER_ADMIN',
+
+export enum TokenTypeDTO {
+    PASSWORD_RESET = 'PASSWORD_RESET',
+    EMAIL_VERIFICATION = 'EMAIL_VERIFICATION',
+    TWO_FACTOR_AUTH = 'TWO_FACTOR_AUTH',
 }
+//endregion
 
-// User DTOs
+
+export interface UserVerificationTokenDTO {
+    id: string;
+    token: string;
+    type: TokenTypeDTO;
+    expires: Date;
+}
 
 /**
  * Full user data structure for internal use or data transfer.
@@ -30,60 +34,71 @@ export interface UserDTO {
     userNumber: string;
     firstName: string;
     lastName: string;
+    password?: string;
     companyName?: string;
     vatNumber?: string;
     companyNumber?: string;
     exportNumber?: string;
     isEnabled: boolean;
+    isVerified: boolean;
     phone?: string;
     mobile?: string;
     fax?: string;
     additionalInfo?: string;
     paymentTermDays: number;
-    roles: Roles;
+    role: RoleDTO;
     userAddress?: UserAddressDTO[];
+    userVerificationToken?: UserVerificationTokenDTO[];
+
 }
 
 /**
  * DTO for creating a new user.
  */
-export interface UserCreateDTO {
-    name?: string;
-    email: string;
-    password: string;
+export interface ClientCreateDTO {
+    userNumber: string;
     firstName: string;
     lastName: string;
     companyName?: string;
     vatNumber?: string;
     companyNumber?: string;
     exportNumber?: string;
+    isEnabled?: boolean;
+    isVerified?: boolean;
     phone?: string;
     mobile?: string;
     fax?: string;
     additionalInfo?: string;
-    paymentTermDays?: number;
-    roles?: Roles[]; // Defaults to CUSTOMER in service logic
+    paymentTermDays: number;
+    role: RoleDTO;
+    userAddress?: UserAddressDTO[];
+
+}
+
+/**
+ * DTO for creating a new user.
+ */
+export interface CreateAdminDTO {
+    userNumber?: string;
+    firstName: string;
+    lastName: string;
+    mobile: string;
+    phone?: string;
+    email: string;
+    isEnabled?: boolean;
+    isVerified?: boolean;
+    emailVerified?: Date;
+    role?: RoleDTO;
+    password: string;
+    userVerificationToken?: UserVerificationTokenDTO[];
 }
 
 /**
  * DTO for updating user details.
  */
-export interface UserUpdateDTO {
-    name?: string;
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-    companyName?: string;
-    vatNumber?: string;
-    companyNumber?: string;
-    exportNumber?: string;
-    isEnabled?: boolean;
-    phone?: string;
-    mobile?: string;
-    fax?: string;
-    additionalInfo?: string;
-    paymentTermDays?: number;
-    roles?: Roles[];
+export interface UserUpdateDTO extends Partial<Omit<UserDTO, 'id'>> {
+    id: string;
+
 }
 
 /**
@@ -95,7 +110,8 @@ export interface UserRequestDTO {
     firstName?: string;
     lastName?: string;
     isEnabled?: boolean;
-    roles?: Roles[];
+    isVerified?: boolean;
+    role?: RoleDTO;
 }
 
 /**
@@ -112,9 +128,8 @@ export interface UserResponseDTO {
     vatNumber?: string;
     phone?: string;
     mobile?: string;
-    roles: Roles[];
-    createdAt: Date;
-    updatedAt: Date;
+    role: RoleDTO;
+
 }
 
 /**
@@ -122,7 +137,16 @@ export interface UserResponseDTO {
  */
 export interface LoginDTO {
     email: string;
-    pwHash: string; // hashed password
+    password: string; // hashed password
+}
+
+// UserDTO response after login
+export interface UserLoginResponseDTO extends UserDTO {
+    id : string;
+    name : string;
+    email : string;
+    role : RoleDTO;
+    userNumber : string;
 }
 
 /**

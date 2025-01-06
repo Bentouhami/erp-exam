@@ -4,9 +4,11 @@ import {LoginDTO, UserDTO} from "@/services/dtos/UserDtos";
 import axios from "axios";
 import prisma from "@/lib/db";
 import {User} from "next-auth";
+import {API_DOMAIN} from "@/lib/utils/constants";
+import {RoleDTO} from "@/services/dtos/EnumsDtos";
 
-export const getUserFromDb = async (loginData : LoginDTO) : Promise<UserDTO | null> => {
-    // Logic to retrieve user from database based on email and password
+export const getUserFromDb = async (loginData : LoginDTO) : Promise<User | null> => {
+    // Logic to retrieve user from database based on email
     
     if (!loginData.email || !loginData.pwHash) {
         throw new Error("Invalid credentials.");
@@ -14,11 +16,12 @@ export const getUserFromDb = async (loginData : LoginDTO) : Promise<UserDTO | nu
     
     try {
         // Logic to retrieve user from database based on email and password
-        const user = await axios.get(`/api/users/login`, {
+        const user = await axios.get(`${API_DOMAIN}/users/login`, {
             params: {
                 email: loginData.email,
                 pwHash: loginData.pwHash,
             },
+
         });
         
         if (user.status === 200) {
@@ -128,15 +131,26 @@ export const getUserByVatNumber = async (vatNumber: string) => {
  * Generate a unique, sequential `userNumber` in the format U000001.
  * Ensures it's unique and future-proof for larger datasets.
  */
-export async function generateUniqueUserNumber(): Promise<string> {
-    const prefix = "U"; // Prefix for user numbers
+export async function generateUniqueUserNumber(userRole: string): Promise<string> {
+
+    let userPrefix = ""; // Prefix for user numbers
+    if (userRole === RoleDTO.ADMIN) {
+        userPrefix = "ADM";
+    } else if (userRole === RoleDTO.CUSTOMER) {
+        userPrefix = "CUS";
+    } else if (userRole === RoleDTO.SUPER_ADMIN) {
+        userPrefix = "SAD";
+    } else if (userRole === RoleDTO.ACCOUNTANT) {
+        userPrefix = "ACC";
+    }
+
     const paddingLength = 6; // Length of the number portion (e.g., U000001)
 
     // Find the latest user based on userNumber
     const latestUser = await prisma.user.findFirst({
         where: {
             userNumber: {
-                startsWith: prefix,
+                startsWith: userPrefix,
             },
         },
         orderBy: {
@@ -146,21 +160,14 @@ export async function generateUniqueUserNumber(): Promise<string> {
 
     let nextNumber = 1; // Default to 1 if no users exist
 
-    if (latestUser) {
+    if (latestUser && latestUser.userNumber) {
         // Extract the numeric part from the latest userNumber
-        const latestNumber = parseInt(latestUser.userNumber.slice(prefix.length), 10);
+        const latestNumber = parseInt(latestUser.userNumber.slice(userPrefix.length), 10);
         nextNumber = latestNumber + 1;
     }
 
     // Generate the new userNumber with zero-padded numeric part
-    const userNumber = `${prefix}${nextNumber.toString().padStart(paddingLength, "0")}`;
+    const userNumber = `${userPrefix}${nextNumber.toString().padStart(paddingLength, "0")}`;
     return userNumber;
 }
 
-// export async function createUser(userData: Partial<User>) {
-//     return prisma.user.create({
-//         data: {
-//             ...userData,
-//         },
-//     });
-// }

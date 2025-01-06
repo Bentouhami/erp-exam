@@ -1,26 +1,22 @@
 // path: src/services/dtos/EnumsDtos.ts
 
 // Enums matching the database schema
-export enum Roles {
+export enum RoleDTO {
     CUSTOMER = 'CUSTOMER',
     ADMIN = 'ADMIN',
-    STAFF = 'STAFF',
     ACCOUNTANT = 'ACCOUNTANT',
-    WAREHOUSE_MANAGER = 'WAREHOUSE_MANAGER',
-    SALES_REP = 'SALES_REP',
-    SUPPORT_AGENT = 'SUPPORT_AGENT',
     SUPER_ADMIN = 'SUPER_ADMIN',
 }
 
 
-export enum AddressType {
+export enum AddressTypeDTO {
     HOME = 'HOME',
     OFFICE = 'OFFICE',
     BILLING = 'BILLING',
     SHIPPING = 'SHIPPING'
 }
 
-export enum MovementType {
+export enum MovementTypeDTO {
     PURCHASE = 'PURCHASE',
     SALE = 'SALE',
     RETURN = 'RETURN',
@@ -28,44 +24,44 @@ export enum MovementType {
     ADJUSTMENT = 'ADJUSTMENT'
 }
 
-export enum TokenType {
+export enum TokenTypeDTO {
     PASSWORD_RESET = 'PASSWORD_RESET',
     EMAIL_VERIFICATION = 'EMAIL_VERIFICATION',
     TWO_FACTOR_AUTH = 'TWO_FACTOR_AUTH'
 }
 
-export enum UtaxType {
+export enum UtaxTypeDTO {
     LUXURY = 'LUXURY',
     BASIC = 'BASIC',
     SPECIAL = 'SPECIAL'
 }
 
-export enum PaymentMode {
+export enum PaymentModeDTO {
     CASH = 'CASH',
     CREDIT_CARD = 'CREDIT_CARD',
     BANK_TRANSFER = 'BANK_TRANSFER',
     PAYPAL = 'PAYPAL'
 }
 
-export enum PaymentStatus {
+export enum PaymentStatusDTO {
     PENDING = 'PENDING',
     CONFIRMED = 'CONFIRMED',
     CANCELLED = 'CANCELLED',
     REFUNDED = 'REFUNDED'
 }
 
-export enum VatType {
+export enum VatTypeDTO {
     REDUCED = 'REDUCED',
     STANDARD = 'STANDARD',
     EXEMPT = 'EXEMPT'
 }
 
-export enum ItemType {
+export enum ItemTypeDTO {
     PHYSICAL = 'PHYSICAL',
     DIGITAL = 'DIGITAL'
 }
 
-export enum ItemStatus {
+export enum ItemStatusDTO {
     ACTIVE = 'ACTIVE',
     INACTIVE = 'INACTIVE'
 }

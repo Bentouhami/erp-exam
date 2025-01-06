@@ -1,3 +1,5 @@
+// path: src/components/ui/panel.tsx
+
 "use client"
 
 import * as React from "react"
