@@ -31,7 +31,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
     const {toast} = useToast();
     const [loading, setLoading] = useState(false);
     const [generatedItemNumber, setGeneratedItemNumber] = useState<string>('');
-    const [formData, setFormData] = useState<Omit<ItemCreateDTO, 'vatType'>>({
+    const [formData, setFormData] = useState<ItemCreateDTO>({
         itemNumber: '',
         supplierReference: '',
         barcode: '',
@@ -43,6 +43,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
         minQuantity: 0,
         unitId: 0,
         classId: 0,
+        vatType: VatTypeDTO.STANDARD,
     });
     const [selectedVatType, setSelectedVatType] = useState<VatTypeDTO>(VatTypeDTO.STANDARD); // Default to STANDARD
     const [selectedCountry, setSelectedCountry] = useState('');
@@ -91,6 +92,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                 minQuantity: 0,
                 unitId: 0,
                 classId: 0,
+                vatType: VatTypeDTO.STANDARD,
             });
             setSelectedVatType(VatTypeDTO.STANDARD); // Reset the selected vat type
 

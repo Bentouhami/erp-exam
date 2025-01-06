@@ -2,7 +2,7 @@
 
 import {ItemDTO} from "@/services/dtos/ItemDtos";
 import {UserDTO} from "@/services/dtos/UserDtos";
-import {MovementType} from "@/services/dtos/EnumsDtos";
+import {MovementTypeDTO} from "@/services/dtos/EnumsDtos";
 
 export interface StockMovementDTO {
     id: number;
@@ -10,7 +10,7 @@ export interface StockMovementDTO {
     userId: string;
     date: Date;
     quantity: number;
-    movementType: MovementType;
+    MovementTypeDTO: MovementTypeDTO;
     description?: string;
     item: ItemDTO;
     user: UserDTO;
@@ -21,6 +21,6 @@ export interface StockMovementCreateDTO {
     userId: string;
     date: Date;
     quantity: number;
-    movementType: MovementType;
+    MovementTypeDTO: MovementTypeDTO;
     description?: string;
 }

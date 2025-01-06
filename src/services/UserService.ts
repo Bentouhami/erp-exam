@@ -10,7 +10,7 @@ import {RoleDTO} from "@/services/dtos/EnumsDtos";
 export const getUserFromDb = async (loginData : LoginDTO) : Promise<User | null> => {
     // Logic to retrieve user from database based on email
     
-    if (!loginData.email || !loginData.pwHash) {
+    if (!loginData.email || !loginData.password) {
         throw new Error("Invalid credentials.");
     }
     
@@ -19,7 +19,7 @@ export const getUserFromDb = async (loginData : LoginDTO) : Promise<User | null>
         const user = await axios.get(`${API_DOMAIN}/users/login`, {
             params: {
                 email: loginData.email,
-                pwHash: loginData.pwHash,
+                pwHash: loginData.password,
             },
 
         });

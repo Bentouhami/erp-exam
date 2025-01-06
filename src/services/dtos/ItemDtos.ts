@@ -2,7 +2,7 @@
 
 import {InvoiceDetailsDTO} from "@/services/dtos/InvoiceDetailsDtos";
 import {UnitDTO} from "@/services/dtos/UnitDtos";
-import {VatType} from "@/services/dtos/EnumsDtos";
+import {VatTypeDTO} from "@/services/dtos/EnumsDtos";
 import {StockMovementDTO} from "@/services/dtos/StockMovementDtos";
 import {ItemClassDTO} from "@/services/dtos/ItemClassDtos";
 import {ItemTaxDTO} from "@/services/dtos/ItemTaxDtos";
@@ -20,7 +20,7 @@ export interface ItemDTO {
     minQuantity: number;
     unitId: number;
     classId: number;
-    vatType: VatType;
+    vatType: VatTypeDTO;
     unit: UnitDTO;
     itemClass: ItemClassDTO;
     stockMovements: StockMovementDTO[];
@@ -44,7 +44,7 @@ export interface  ItemCreateDTO  {
     minQuantity: number;
     unitId: number;
     classId: number;
-    vatType: VatType;
+    vatType: VatTypeDTO;
 }
 
 export interface ItemUpdateDTO extends Partial<Omit<ItemDTO, "id">> {
