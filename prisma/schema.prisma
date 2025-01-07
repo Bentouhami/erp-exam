@@ -1,6 +1,7 @@
 // Générateur du client Prisma
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 // Configuration de la base de données PostgreSQL
