@@ -1,4 +1,5 @@
-// path: src/app/dashboard/admin/users/add/page.tsx
+// path: src/app/dashboard/admins/add/page.tsx
+
 'use client';
 
 import { useSession } from "next-auth/react";
@@ -6,9 +7,9 @@ import { useRouter } from "next/navigation";
 import { CreateAdminDTO } from "@/services/dtos/UserDtos";
 
 import { Button } from "@/components/ui/button";
-import React, {useState} from "react";
-import {RoleDTO} from "@/services/dtos/EnumsDtos";
-import {RegisterForm} from "@/components/RegisterForm";
+import React, { useState } from "react";
+import { RoleDTO } from "@/services/dtos/EnumsDtos";
+import { RegisterForm } from "@/components/RegisterForm";
 
 export default function AddUserForm() {
     const { data: session } = useSession();
@@ -21,9 +22,12 @@ export default function AddUserForm() {
         phone: "",
         mobile: "",
         password: "",
-        role: RoleDTO.ADMIN, // Default role is ADMIN; can be changed via dropdown
+        role: RoleDTO.ADMIN,
     });
 
+    const updateFormData = (newData: Partial<typeof formData>) => {
+        setFormData((prevData) => ({ ...prevData, ...newData }));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,18 +40,17 @@ export default function AddUserForm() {
             password: formData.password,
             role: formData.role,
         };
-        // const newUser = await apiCalls.createAdmin(userData);
-        console.log("New user created:");
-        router.push("/dashboard/admin/users"); // Redirect to user list after creation
+        console.log("New user created:", userData);
+        router.push("/dashboard/admin/users");
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8 w-full max-w-md px-4">
-            {/* Form fields for first name, last name, email, phone, mobile, password */}
-            {/* Role selection dropdown */}
-            <RegisterForm />
-
-            <Button type="submit">Add User</Button>
+            <RegisterForm
+                formData={formData}
+                updateFormData={updateFormData}
+                handleSubmit={handleSubmit}
+            />
         </form>
     );
 }

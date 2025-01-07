@@ -19,16 +19,16 @@ export function AuthForms() {
                     >
                         Se connecter
                     </Button>
-                    <Button
-                        onClick={() => setIsLogin(false)}
-                        variant={!isLogin ? "default" : "outline"}
-                    >
-                        S'inscrire
-                    </Button>
+                    {/*<Button*/}
+                    {/*    onClick={() => setIsLogin(false)}*/}
+                    {/*    variant={!isLogin ? "default" : "outline"}*/}
+                    {/*>*/}
+                    {/*    S'inscrire*/}
+                    {/*</Button>*/}
                 </div>
             </div>
             <div className="w-full overflow-y-auto max-h-[calc(100vh-200px)]">
-                {isLogin ? <LoginForm /> : <RegisterForm />}
+                <LoginForm/>
             </div>
         </div>
     );
