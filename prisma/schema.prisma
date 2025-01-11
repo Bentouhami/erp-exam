@@ -80,9 +80,11 @@ enum ItemStatus {
 
 // User model
 model User {
-  id            String          @id @default(cuid())
-  name          String?
-  email         String          @unique
+  id        String  @id @default(cuid())
+  name      String? @db.Text
+  email     String  @unique @db.Text
+  emailHash String  @unique // Hashed email for lookup
+
   emailVerified DateTime?
   image         String?
   accounts      Account[]
@@ -90,17 +92,17 @@ model User {
   Authenticator Authenticator[]
 
   userNumber      String? @unique
-  firstName       String  @db.VarChar(40)
-  lastName        String  @db.VarChar(40)
+  firstName       String  @db.Text
+  lastName        String  @db.Text
   password        String?
-  companyName     String? @db.VarChar(60)
+  companyName     String? @db.Text
   vatNumber       String? @db.VarChar(15) // Numéro de TVA (Taxe sur la Valeur Ajoutée) du client
   companyNumber   String? @db.VarChar(15)
   exportNumber    String? @db.VarChar(15)
   isEnabled       Boolean @default(true)
   isVerified      Boolean @default(false)
-  phone           String? @unique
-  mobile          String? @unique
+  phone           String? @unique @db.Text
+  mobile          String? @unique @db.Text
   fax             String? @unique
   additionalInfo  String? @db.Text
   paymentTermDays Int     @default(0) // Délai de paiement en jours (0 = paiement immédiat)
@@ -116,6 +118,7 @@ model User {
 
   UserAddress           UserAddress[]
   UserVerificationToken UserVerificationToken[]
+  Invoice               Invoice[]
 
   @@index([userNumber, lastName, vatNumber]) // Index pour améliorer les performances des recherches
   @@map("users")
@@ -326,6 +329,7 @@ model Invoice {
   // Relations
   invoiceDetails InvoiceDetail[] // Détails des articles inclus dans la facture
   payments       Payment[] // Paiements associés à la facture
+  User           User            @relation(fields: [userId], references: [id])
 
   @@index([invoiceNumber, issuedAt]) // Index pour accélérer les recherches
   @@map("invoices")

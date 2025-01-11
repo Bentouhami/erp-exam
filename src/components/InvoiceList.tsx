@@ -1,8 +1,9 @@
-"use client"
+// Path: src/components/InvoiceList.tsx
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
     Table,
     TableBody,
@@ -11,74 +12,215 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreHorizontal, ArrowUpDown, Plus } from 'lucide-react'
+import { toast } from 'react-toastify'
+import axios from "axios";
+import {API_DOMAIN, DOMAIN} from "@/lib/utils/constants";
+import {ListSkeleton} from "@/components/skeletons/ListSkeleton";
 
-// Type pour une facture
 type Invoice = {
-    id: string
-    number: string
-    date: string
-    clientName: string
-    clientNumber: string
-    total: number
-    flagAccounting: boolean
+    id: number
+    invoiceNumber: string
+    issuedAt: string
+    dueDate: string
+    userId: string
+    flag_accounting: boolean
+    totalAmount: number
+    totalVatAmount: number
+    totalTtcAmount: number
+    User: {
+        name: string
+        userNumber: string
+    }
 }
 
-// Données factices pour l'exemple
-const mockInvoices: Invoice[] = [
-    { id: "1", number: "FAC-001", date: "2025-01-15", clientName: "Client A", clientNumber: "CLI-001", total: 1500, flagAccounting: false },
-    { id: "2", number: "FAC-002", date: "2025-01-20", clientName: "Client B", clientNumber: "CLI-002", total: 2300, flagAccounting: true },
-    // Ajoutez plus de factures factices ici
-]
+type SortConfig = {
+    key: keyof Invoice | 'User.name'
+    direction: 'asc' | 'desc'
+}
 
-export function InvoiceList() {
-    const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices)
-    const [searchTerm, setSearchTerm] = useState("")
+export default function InvoiceList() {
+    const [invoices, setInvoices] = useState<Invoice[]>([])
+    const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([])
+    const [searchTerm, setSearchTerm] = useState('')
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'invoiceNumber', direction: 'asc' })
+    const [loading, setLoading] = useState(true)
+    const router = useRouter()
 
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value)
-        // Implémentez la logique de recherche ici
+    useEffect(() => {
+        fetchInvoices()
+    }, [])
+
+    useEffect(() => {
+        const filtered = invoices.filter(invoice =>
+            invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            invoice.User.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            invoice.User.userNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            new Date(invoice.issuedAt).toLocaleDateString().includes(searchTerm)
+        )
+        setFilteredInvoices(filtered)
+    }, [searchTerm, invoices])
+
+    const fetchInvoices = async () => {
+        setLoading(true)
+        try {
+            const response = await axios.get(`${API_DOMAIN}/invoices`)
+            if (response.status !== 200 || !response.data) {
+                throw new Error('Failed to fetch invoices')
+            }
+            const data = await response.data;
+            setInvoices(data)
+            setFilteredInvoices(data)
+        } catch (error) {
+            console.error('Error fetching invoices:', error)
+            toast.error('Failed to fetch invoices')
+        } finally {
+            setLoading(false)
+        }
     }
 
-    const handleSort = (key: keyof Invoice) => {
-        // Implémentez la logique de tri ici
+    const handleSort = (key: SortConfig['key']) => {
+        let direction: 'asc' | 'desc' = 'asc'
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc'
+        }
+        setSortConfig({ key, direction })
+
+        const sortedInvoices = [...filteredInvoices].sort((a, b) => {
+            if (key === 'User.name') {
+                return direction === 'asc'
+                    ? a.User.name.localeCompare(b.User.name)
+                    : b.User.name.localeCompare(a.User.name)
+            }
+            if (a[key] < b[key]) return direction === 'asc' ? -1 : 1
+            if (a[key] > b[key]) return direction === 'asc' ? 1 : -1
+            return 0
+        })
+        setFilteredInvoices(sortedInvoices)
+    }
+
+    const handleAddInvoice = () => {
+        router.push(`${DOMAIN}/dashboard/invoices/new`)
+    }
+
+    const handleEditInvoice = (invoiceId: number) => {
+        router.push(`${DOMAIN}/dashboard/invoices/${invoiceId}/edit`)
+    }
+
+    const handleDeleteInvoice = async (invoiceId: number) => {
+        if (window.confirm('Are you sure you want to delete this invoice?')) {
+            try {
+                const response = await axios.get(`${API_DOMAIN}/invoices/${invoiceId}`, {
+                    method: 'DELETE',
+                })
+                if (response.status !== 200 || !response.data) {
+                    throw new Error('Failed to delete invoice')
+                }
+
+                toast.success('Invoice deleted successfully')
+                fetchInvoices()
+            } catch (error) {
+                console.error('Error deleting invoice:', error)
+                toast.error('Failed to delete invoice')
+            }
+        }
+    }
+
+    if (loading) {
+        return (
+            <ListSkeleton />
+        )
     }
 
     return (
-        <div>
-            <div className="mb-4">
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
                 <Input
                     type="text"
-                    placeholder="Rechercher une facture..."
+                    placeholder="Search invoices..."
                     value={searchTerm}
-                    onChange={handleSearch}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
                 />
+                <Button onClick={handleAddInvoice}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Invoice
+                </Button>
             </div>
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead onClick={() => handleSort('number')}>N° Facture</TableHead>
-                        <TableHead onClick={() => handleSort('date')}>Date</TableHead>
-                        <TableHead onClick={() => handleSort('clientName')}>Client</TableHead>
-                        <TableHead onClick={() => handleSort('clientNumber')}>N° Client</TableHead>
-                        <TableHead onClick={() => handleSort('total')}>Total</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="w-[100px]">
+                            <Button variant="ghost" onClick={() => handleSort('invoiceNumber')}>
+                                Invoice Number
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </TableHead>
+                        <TableHead>
+                            <Button variant="ghost" onClick={() => handleSort('issuedAt')}>
+                                Issue Date
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </TableHead>
+                        <TableHead>
+                            <Button variant="ghost" onClick={() => handleSort('dueDate')}>
+                                Due Date
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </TableHead>
+                        <TableHead>
+                            <Button variant="ghost" onClick={() => handleSort('User.name')}>
+                                Customer Name
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </TableHead>
+                        <TableHead>
+                            <Button variant="ghost" onClick={() => handleSort('totalTtcAmount')}>
+                                Total Amount (TTC)
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {invoices.map((invoice) => (
+                    {filteredInvoices.map((invoice) => (
                         <TableRow key={invoice.id}>
-                            <TableCell>{invoice.number}</TableCell>
-                            <TableCell>{invoice.date}</TableCell>
-                            <TableCell>{invoice.clientName}</TableCell>
-                            <TableCell>{invoice.clientNumber}</TableCell>
-                            <TableCell>{invoice.total.toFixed(2)} €</TableCell>
-                            <TableCell>
-                                <Button asChild variant="outline" size="sm" disabled={invoice.flagAccounting}>
-                                    <Link href={`/dashboard/invoice/${invoice.id}`}>
-                                        {invoice.flagAccounting ? "Voir" : "Modifier"}
-                                    </Link>
-                                </Button>
+                            <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                            <TableCell>{new Date(invoice.issuedAt).toLocaleDateString()}</TableCell>
+                            <TableCell>{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
+                            <TableCell>{invoice.User.name}</TableCell>
+                            <TableCell>{invoice.totalTtcAmount} €</TableCell>
+                            <TableCell>{invoice.flag_accounting ? 'Accounted' : 'Not Accounted'}</TableCell>
+                            <TableCell className="text-right">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                            <span className="sr-only">Open menu</span>
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuItem onClick={() => handleEditInvoice(invoice.id)} disabled={invoice.flag_accounting}>
+                                            Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleDeleteInvoice(invoice.id)} disabled={invoice.flag_accounting}>
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
                         </TableRow>
                     ))}

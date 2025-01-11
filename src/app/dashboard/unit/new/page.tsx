@@ -1,4 +1,4 @@
-// path : src/app/dashboard/unit/new/page.tsx
+// path: src/app/dashboard/unit/new/page.tsx
 
 // page to add new unit to db
 'use client';

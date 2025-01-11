@@ -1,20 +1,20 @@
 // path: src/services/backend-services/Bk_UserService.ts
 'use server';
-'use server';
 
 import prisma from "@/lib/db";
+import {Simulate} from "react-dom/test-utils";
 
 /**
  * Check if a user already exists by email
- * @param email - Email of the user to check
  * @returns ID of the user if it exists, null otherwise
+ * @param emailHash
  */
-export async function isUserAlreadyExistByEmail(email: string): Promise<string | null> {
-    const user = await prisma.user.findFirst({
-        where: { email },
-        select: { id: true }
+export async function isUserAlreadyExistByEmailHash(emailHash: string): Promise<Partial<any> | null> {
+    const user = await prisma.user.findUnique({
+        where: { emailHash },
+        select: { id: true, name: true, emailHash: true }
     });
-    return user ? user.id : null;
+    return user ? user : null;
 }
 
 /**

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import bcrypt from "bcryptjs";
+import {decrypt, hashEmail} from "@/lib/security/security";
 
 /**
  * Authenticate user by email and password
@@ -15,10 +16,13 @@ export async function POST(req: NextRequest) {
         if (!email || !password) {
             return NextResponse.json({ message: "Email and password are required!" }, { status: 400 });
         }
+        console.log("email and password in path: src/app/api/v1/users/login/route.ts: ", email, password);
 
+        // hash email
+        const emailHash = hashEmail(email);
         // 2. Find the user by email in the database
         const user = await prisma.user.findUnique({
-            where: { email },
+            where: { emailHash },
             select: {
                 id: true,
                 firstName: true,
@@ -30,6 +34,8 @@ export async function POST(req: NextRequest) {
                 isEnabled: true,
             },
         });
+
+        console.log("user in path: src/app/api/v1/users/login/route.ts: ", user);
 
         if (!user) {
             return NextResponse.json({ message: "Invalid email or password!" }, { status: 401 });
@@ -47,9 +53,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "User account is disabled!" }, { status: 403 });
         }
 
-        // 5. Remove the password before returning the response
-        const { password: _, ...userWithoutPassword } = user;
 
+        // 5. Remove the password before returning the response
+        const { password: _, ...userWithoutPassword } = user; // remove password from user object
+
+        console.log("userWithoutPassword in path: src/app/api/v1/users/login/route.ts: ", userWithoutPassword);
+
+        // decrypt userWithoutPassword data
+        // decrypt userWithoutPassword data
+        const decryptedFirstName = decrypt(userWithoutPassword.firstName);
+        const decryptedLastName = decrypt(userWithoutPassword.lastName);
+        const decryptedEmail = decrypt(userWithoutPassword.email);
+        userWithoutPassword.firstName = decryptedFirstName;
+        userWithoutPassword.lastName = decryptedLastName;
+        userWithoutPassword.email = decryptedEmail;
 
         // 6. Return the user data
         return NextResponse.json(userWithoutPassword, { status: 200 });

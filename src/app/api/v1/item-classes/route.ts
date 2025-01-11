@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({message: "Item classes not found!"}, {status: 404});
         }
         return NextResponse.json(
-            {itemClasses}, {status: 200} // 200 OK
+            itemClasses, {status: 200} // 200 OK
         );
     } catch (error) {
         return NextResponse.json({message: "Error retrieving item classes!"}, {status: 500});

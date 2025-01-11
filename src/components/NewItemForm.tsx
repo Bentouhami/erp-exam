@@ -10,9 +10,9 @@ import {Textarea} from '@/components/ui/textarea';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from '@/components/ui/card';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
 import {Label} from '@/components/ui/label';
-import {useToast} from '@/hooks/use-toast';
 import {ItemCreateDTO} from "@/services/dtos/ItemDtos";
 import {VatTypeDTO} from "@/services/dtos/EnumsDtos";
+import {toast} from "react-toastify";
 
 interface NewItemFormProps {
     units: Array<{ id: number; name: string }>;
@@ -28,7 +28,6 @@ interface NewItemFormProps {
 }
 
 export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: NewItemFormProps) {
-    const {toast} = useToast();
     const [loading, setLoading] = useState(false);
     const [generatedItemNumber, setGeneratedItemNumber] = useState<string>('');
     const [formData, setFormData] = useState<ItemCreateDTO>({
@@ -74,10 +73,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                 itemNumber: generatedItemNumber,
             });
 
-            toast({
-                title: "Article créé avec succès!",
-                description: `L'article ${formData.label} a été ajouté à votre inventaire.`,
-            });
+            toast.success(`L'article ${formData.label} a été ajouté à votre inventaire.`)
 
             // Reset form
             setFormData({
@@ -97,17 +93,13 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
             setSelectedVatType(VatTypeDTO.STANDARD); // Reset the selected vat type
 
         } catch (error) {
-            toast({
-                title: "Erreur lors de la création",
-                description: "Une erreur est survenue lors de la création de l'article.",
-                variant: "destructive",
-            });
+            toast.error("Une erreur est survenue lors de la création de l'article.");
         } finally {
             setLoading(false);
         }
     };
 
-    // Fetch the item number when the form loads
+// Fetch the item number when the form loads
     useEffect(() => {
         const fetchItemNumber = async () => {
             const response = await fetch('/api/v1/items/generate-number');
@@ -118,7 +110,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
         fetchItemNumber();
     }, []);
 
-    // ** Initialize the Country Dropdown and Filter VAT Types **
+// ** Initialize the Country Dropdown and Filter VAT Types **
     useEffect(() => {
         if (vatTypes.length > 0) {
             const defaultCountryCode = vatTypes[0].country.countryCode; // Select the first country by default
@@ -269,7 +261,7 @@ export default function NewItemForm({units, itemClasses, vatTypes, onSubmit}: Ne
                                     onValueChange={(value) => setSelectedVatType(value as VatTypeDTO)} // Ensure enum value is set
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionner TVA" />
+                                        <SelectValue placeholder="Sélectionner TVA"/>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {filteredVatTypes.map((vat) => (

@@ -1,88 +1,80 @@
-// path: src/app/api/v1/items/[id]/route.ts
-import {NextRequest, NextResponse} from "next/server";
-import prisma from "@/lib/db";
+ // path: src/app/api/v1/items/[id]/route.ts
+
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db';
 
 /**
- * Get article by id
- * @param req
+ * GET a single item by ID
  */
-export async function GET(req: NextRequest) {
-    if(req.method !== "GET") {
-        return NextResponse.json({ message: "Method not allowed!" }, { status: 405 });
-    }
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const { id } = await req.json();
-        const article = await prisma.item.findUnique({
-            where: {
-                id : Number(id),
+        const item = await prisma.item.findUnique({
+            where: { id: parseInt(params.id) },
+            include: {
+                unit: true,
+                itemClass: true,
+                itemTaxes: { include: { utax: true } },
             },
         });
-        if (!article) {
-            return NextResponse.json({ message: "Article not found!" }, { status: 404 });
+
+        if (!item) {
+            return NextResponse.json({ error: 'Item not found' }, { status: 404 });
         }
-        return NextResponse.json({article}, {
-            status: 200
 
-        });
+        return NextResponse.json(item, { status: 200 });
     } catch (error) {
-        return NextResponse.json({ message: "Error retrieving article!" }, { status: 500 });
-    }
-}
-
-
-/**
- * Update article by id
- * @param req
- * @param params
- */
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-    if(req.method !== "PUT") {
-        return NextResponse.json({ message: "Method not allowed!" }, { status: 405 }); // 405 Method Not Allowed
-    }
-
-    try {
-        const {id} = params;
-        const article = await prisma.item.findUnique({
-            where: {
-                id: Number(id),
-            },
-        });
-        if (!article) {
-            return NextResponse.json({ message: "Article not found!" }, { status: 404 }); // 404 Not Found
-        }
-        return NextResponse.json({article}, {status: 201}); // 201 Created
-    } catch (error) {
-        return NextResponse.json({ message: "Error retrieving article!" }, { status: 500 }); // 500 Internal Server Error
+        console.error('Error fetching item:', error);
+        return NextResponse.json({ error: 'Failed to fetch item' }, { status: 500 });
     }
 }
 
 /**
- * Delete article by id
- * @param req
- * @param params
+ * PUT to update an existing item by ID
  */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-    if(req.method !== "DELETE") {
-        return NextResponse.json({ message: "Method not allowed!" }, { status: 405 });
-    }
-
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const {id} = params;
-        const article = await prisma.item.findUnique({
-            where: {
-                id: Number(id),
+        const body = await request.json();
+
+        const updatedItem = await prisma.item.update({
+            where: { id: parseInt(params.id) },
+            data: {
+                itemNumber: body.itemNumber,
+                label: body.label,
+                description: body.description,
+                retailPrice: body.retailPrice,
+                purchasePrice: body.purchasePrice,
+                vatType: body.vatType,
+                unit: { connect: { id: body.unitId } },
+                itemClass: { connect: { id: body.classId } },
+                itemTaxes: {
+                    deleteMany: {}, // Clear existing item taxes
+                    create: body.itemTaxes.map((taxId: number) => ({
+                        utax: { connect: { id: taxId } },
+                        price: 0,
+                    })),
+                },
             },
         });
-        if (!article) {
-            return NextResponse.json({ message: "Article not found!" }, { status: 404 });
-        }
-        return NextResponse.json({article}, {
-            status: 200,
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
+
+        return NextResponse.json(updatedItem, { status: 200 });
     } catch (error) {
-        return NextResponse.json({ message: "Error retrieving article!" }, { status: 500 });
+        console.error('Error updating item:', error);
+        return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
+    }
+}
+
+/**
+ * DELETE an item by ID
+ */
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+    try {
+        await prisma.item.delete({
+            where: { id: parseInt(params.id) },
+        });
+
+        return NextResponse.json({ message: 'Item deleted successfully' }, { status: 200 });
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });
     }
 }

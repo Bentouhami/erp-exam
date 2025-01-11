@@ -19,10 +19,13 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
             async authorize(credentials): Promise<User | null> {
                 try {
                     // 1. Call the login route via apiCalls
+                    // const encryptedEmail = encrypt(credentials.email as string);
                     const user = await apiCalls.getUserByEmail({
                         email: credentials.email as string,
                         password: credentials.password as string,
                     });
+
+                    console.log("user found by email and or phone number in isUserAlreadyExist function in path: src/app/api/v1/users/verify/route.ts: ", user);
 
                     // 2. Return the user if login is successful
                     if (user) {

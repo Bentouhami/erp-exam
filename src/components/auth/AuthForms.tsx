@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { LoginForm } from "@/components/LoginForm";
+import { LoginForm } from "@/components/auth/LoginForm";
 import { RegisterForm } from "@/components/RegisterForm";
 
 export function AuthForms() {
@@ -13,12 +13,14 @@ export function AuthForms() {
         <div className="flex flex-col items-center w-full max-w-md px-4">
             <div className="w-full top-0 bg-background pt-24 pb-8 flex flex-col items-center space-y-8">
                 <div className="flex justify-center space-x-4">
-                    <Button
-                        onClick={() => setIsLogin(true)}
-                        variant={isLogin ? "default" : "outline"}
-                    >
-                        Se connecter
-                    </Button>
+                    <h1 className="text-3xl font-bold">Authentification</h1>
+
+                    {/*<Button*/}
+                    {/*    onClick={() => setIsLogin(true)}*/}
+                    {/*    variant={isLogin ? "default" : "outline"}*/}
+                    {/*>*/}
+                    {/*    Se connecter*/}
+                    {/*</Button>*/}
                     {/*<Button*/}
                     {/*    onClick={() => setIsLogin(false)}*/}
                     {/*    variant={!isLogin ? "default" : "outline"}*/}

@@ -1,32 +1,56 @@
-// path: src/app/api/v1/users/route.ts
-import {NextRequest, NextResponse} from "next/server";
-import prisma from "@/lib/db";
+// src/app/api/v1/users/route.ts
+import { NextResponse } from 'next/server'
+import prisma from '@/lib/db'
+import { decrypt } from "@/lib/security/security"
 
-
-/**
- * @method GET
- * @route /api/v1/users
- * @desc Get all users
- *
- */
-
-export async function GET(req: NextRequest) {
-    console.log("log ====> Get all users api route called")
-
-    if (req.method !== "GET") {
-        return NextResponse.json({status: 400});
-    }
-
+export async function GET() {
     try {
-        const users = await prisma.user.findMany();
-        console.log("log ====> users in path: src/app/api/v1/users/route.ts: ", users);
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                userNumber: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                role: true,
+                createdAt: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        })
 
-        if (!users) {
-            return NextResponse.json({message: "No users found"}, {status: 400});
-        }
-        return NextResponse.json(users);
+        // decrypt data before sending it to the client
+        users.forEach(user => {
+            user.email = decrypt(user.email)
+            user.firstName = decrypt(user.firstName)
+            user.lastName = decrypt(user.lastName)
+        })
+
+        return NextResponse.json(users)
     } catch (error) {
-        console.error("Error getting users:", error);
-        return NextResponse.json({message: "Internal server error"}, {status: 500});
+        console.error('Error fetching users:', error)
+        return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
     }
 }
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url)
+        const id = searchParams.get('id')
+
+        if (!id) {
+            return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+        }
+
+        await prisma.user.delete({
+            where: { id },
+        })
+
+        return NextResponse.json({ message: 'User deleted successfully' })
+    } catch (error) {
+        console.error('Error deleting user:', error)
+        return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 })
+    }
+}
+

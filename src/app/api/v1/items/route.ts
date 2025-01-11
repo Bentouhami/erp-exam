@@ -1,72 +1,68 @@
 // path: src/app/api/v1/items/route.ts
 
-import {NextRequest, NextResponse} from "next/server";
-import prisma from "@/lib/db";
-import {ItemCreateDTO} from "@/services/dtos/ItemDtos";
+import {NextRequest, NextResponse} from 'next/server'
+import prisma from '@/lib/db'
 
-
-
-/**
- * POST Method to create a new article
- * @param req - The request object
- * @returns A response object with the status code and the created article
- */
-export async function POST(req: NextRequest) {
-    if (req.method !== "POST") {
-        return new Response("Method not allowed", { status: 405 });
-    }
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')
+    const sort = searchParams.get('sort') || 'itemNumber'
+    const order = searchParams.get('order') || 'asc'
 
     try {
-        const data: ItemCreateDTO = await req.json();
-
-
-        console.log("log ====> data in POST route in path src/app/api/v1/items/route.ts is : ", data);
-
-        const response = await prisma.item.create({
-            data: {
-                itemNumber: data.itemNumber,
-                supplierReference: data.supplierReference,
-                barcode: data.barcode,
-                label: data.label,
-                description: data.description,
-                purchasePrice: Number(data.purchasePrice),
-                retailPrice: Number(data.retailPrice),
-                stockQuantity: Number(data.stockQuantity),
-                minQuantity: Number(data.minQuantity),
-                unitId: Number(data.unitId),
-                classId: Number(data.classId),
-                vatType: data.vatType, // Enum value directly inserted
-            },
-            include: {
-               stockMovements: true,
-               invoiceDetails: true,
-               itemTaxes: true,
+        const items = await prisma.item.findMany({
+            where: search
+                ? {
+                    OR: [
+                        { itemNumber: { contains: search, mode: 'insensitive' } },
+                        { label: { contains: search, mode: 'insensitive' } },
+                    ],
+                }
+                : undefined,
+            orderBy: {
+                [sort]: order,
             },
         });
 
-        console.log("log ====> response in POST route in path src/app/api/v1/items/route.ts is : ", response);
 
-        return NextResponse.json({ item: response }, { status: 201 }); // 201 Created
+        return NextResponse.json(items)
     } catch (error) {
-        console.error("Error creating item:", error);
-        return new Response("Internal server error", { status: 500 }); // 500 Internal Server Error
+        console.error('Error fetching items:', error)
+        return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 })
     }
 }
 
-/**
- * Get all articles
- * @param req NextRequest
- */
-export async function GET(req: NextRequest) {
-    if(req.method !== "GET") {
-        return NextResponse.json({ message: "Method not allowed!" }, { status: 405 });
-    }
+
+export async function POST(request: Request) {
     try {
-        const articles = await prisma.item.findMany();
-        return NextResponse.json(
-            {articles}, {status: 200} // 200 OK
-        );
+        const body = await request.json();
+
+        const newItem = await prisma.item.create({
+            data: {
+                itemNumber: body.itemNumber,
+                label: body.label,
+                description: body.description,
+                retailPrice: body.retailPrice,
+                purchasePrice: body.purchasePrice,
+                vatType: body.vatType,
+                unit: { connect: { id: body.unitId } },
+                itemClass: { connect: { id: body.classId } }, // Correctly connect item class
+                itemTaxes: {
+                    create: body.itemTaxes.map((taxId: number) => ({
+                        utax: { connect: { id: taxId } },
+                        price: 0, // Set a default price or modify as needed
+                    })),
+                },
+            },
+        });
+
+        return NextResponse.json(newItem, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ message: "Error retrieving articles!" }, { status: 500 });
+        console.error('Error creating item:', error);
+        return NextResponse.json({ error: 'Failed to create item' }, { status: 500 });
     }
 }
+
+
+
+

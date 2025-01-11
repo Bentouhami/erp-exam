@@ -5,6 +5,7 @@ import {usePathname, useRouter} from 'next/navigation';
 import {signOut, useSession} from 'next-auth/react';
 import {Bell, FileText, Home, LogIn, LogOut, Monitor, Moon, Package, Settings, Sun, User, Users} from 'lucide-react';
 import {useTheme} from 'next-themes';
+import {LiaFileInvoiceDollarSolid} from "react-icons/lia";
 
 const Sidebar = () => {
     const pathname = usePathname();
@@ -19,11 +20,9 @@ const Sidebar = () => {
 
     const menuItems = [
         {name: 'Dashboard', icon: Home, path: '/dashboard'},
-        {name: 'Factures', icon: FileText, path: '/dashboard/invoices'},
-        {name: 'Clients', icon: Users, path: '/dashboard/customers'},
-        {name: 'Admins', icon: Users, path: '/dashboard/admins'},
-        {name: 'Accountants', icon: Users, path: '/dashboard/accountants'},
-        {name: 'Articles', icon: Package, path: '/dashboard/items'},
+        {name: 'Invoices', icon: FileText, path: '/dashboard/invoices'},
+        {name: 'users', icon: Users, path: '/dashboard/users'},
+        {name: 'Items', icon: Package, path: '/dashboard/items'},
         {name: 'Paramètres', icon: Settings, path: '/dashboard/settings'},
     ];
 
@@ -32,30 +31,53 @@ const Sidebar = () => {
     return (
         <div
             className="flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 w-16 sm:w-64 h-screen relative z-50">
+
             {/* Profile Section */}
             <div className="p-4 border-b dark:border-gray-700 relative">
-                <div className="flex items-center justify-between">
+                {/* Centered Logo Section */}
+                <div className="flex flex-col items-center space-y-2">
+                    <div className="flex items-center space-x-2">
+                        {/* "Gest" Text */}
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            Gest
+                        </h1>
+
+                        {/* Rotated Logo */}
+                        <LiaFileInvoiceDollarSolid
+                            className="h-10 w-10 text-gray-600 dark:text-gray-300 transform rotate-45"
+                        />
+
+                        {/* "Fac" Text */}
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            Fac
+                        </h1>
+                    </div>
+                </div>
+
+                {/* Button Section */}
+                <div className="flex items-center justify-center mt-4">
                     <button
                         onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                        className="flex items-center space-x-3"
+                        className="flex items-center space-x-3 mb-3"
                     >
-                        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
-                            <User className="h-6 w-6 text-gray-600 dark:text-gray-300"/>
-                        </div>
-
                         {/* User Info (visible on medium and up) */}
                         {status === 'authenticated' && (
                             <div className="hidden sm:block">
-                                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                    {session.user?.name || 'User'}
-                                </h2>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                <div
+                                    className="flex items-center space-x-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
+                                    <User className="h-6 w-6 text-gray-600 dark:text-gray-300"/>
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                        {session.user?.name || 'User'}
+                                    </h2>
+                                <p className=" text-gray-500  text-sm dark:text-gray-400 truncate absolute bottom-0 right-10">
                                     {session.user?.role}
                                 </p>
+                                </div>
                             </div>
                         )}
                     </button>
                 </div>
+
 
                 {/* User Dropdown - Now positioned absolutely */}
                 {userDropdownOpen && (
@@ -102,11 +124,11 @@ const Sidebar = () => {
                         className="flex items-center justify-center sm:justify-start space-x-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-full p-2"
                     >
                         {theme === 'dark' ? (
-                            <Moon className="h-5 w-5" />
+                            <Moon className="h-5 w-5"/>
                         ) : theme === 'light' ? (
-                            <Sun className="h-5 w-5" />
+                            <Sun className="h-5 w-5"/>
                         ) : (
-                            <Monitor className="h-5 w-5" />
+                            <Monitor className="h-5 w-5"/>
                         )}
                         <span className="hidden sm:inline">Mode: {theme}</span>
                     </button>
@@ -124,10 +146,10 @@ const Sidebar = () => {
                             >
                                 <ul className="space-y-1 p-2">
                                     {[
-                                        { name: 'Light', icon: Sun, theme: 'light' },
-                                        { name: 'Dark', icon: Moon, theme: 'dark' },
-                                        { name: 'System', icon: Monitor, theme: 'system' }
-                                    ].map(({ name, icon: Icon, theme: themeOption }) => (
+                                        {name: 'Light', icon: Sun, theme: 'light'},
+                                        {name: 'Dark', icon: Moon, theme: 'dark'},
+                                        {name: 'System', icon: Monitor, theme: 'system'}
+                                    ].map(({name, icon: Icon, theme: themeOption}) => (
                                         <li
                                             key={name}
                                             onClick={() => {
@@ -137,7 +159,7 @@ const Sidebar = () => {
                                             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer rounded-md"
                                         >
                                             <div className="flex items-center space-x-2">
-                                                <Icon className="h-5 w-5" />
+                                                <Icon className="h-5 w-5"/>
                                                 <span>{name}</span>
                                             </div>
                                         </li>
@@ -147,8 +169,6 @@ const Sidebar = () => {
                         </>
                     )}
                 </div>
-
-
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4">
@@ -179,7 +199,7 @@ const Sidebar = () => {
                 <div className="p-4 border-t dark:border-gray-700">
                     {status === 'authenticated' ? (
                         <button
-                            onClick={() => signOut({callbackUrl: '/auth'})}
+                            onClick={() => signOut({redirectTo: '/auth'})}
                             className="flex items-center justify-center sm:justify-start space-x-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-full p-2"
                         >
                             <LogOut className="h-5 w-5"/>

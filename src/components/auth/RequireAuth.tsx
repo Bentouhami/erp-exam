@@ -24,18 +24,17 @@ export default function RequireAuth({
     if (status === "loading") {
         return (
             <div className="flex justify-center items-center min-h-screen">
-                <Loader2 className="h-8 w-8 animate-spin"/>
+                <Loader2 className="h-10 w-10 animate-spin"/>
             </div>
         );
     }
 
     // If not authenticated, show message and redirect
     if (status === "unauthenticated") {
-        toast.error(customMessage);
         router.push(redirectTo);
         return (
             <div className="flex justify-center items-center min-h-screen">
-                <Loader2 className="h-8 w-8 animate-spin"/>
+                <Loader2 className="h-10 w-10 animate-spin"/>
             </div>
         );
     }

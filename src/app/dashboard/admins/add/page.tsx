@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { CreateAdminDTO } from "@/services/dtos/UserDtos";
 
-import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 import { RoleDTO } from "@/services/dtos/EnumsDtos";
 import { RegisterForm } from "@/components/RegisterForm";

@@ -1,5 +1,4 @@
 // path: src/utils/constants.ts
-//region Domains for the current environment
 
 const PRODUCTION_DOMAIN = "https://erp-exam.vercel.app/";
 

@@ -1,0 +1,11 @@
+import InvoiceForm from '@/components/dashboard/forms/InvoiceForm'
+
+export default function NewInvoicePage() {
+    return (
+        <div className="container mx-auto py-10">
+            <h1 className="text-2xl font-bold mb-5">Create New Invoice</h1>
+            <InvoiceForm />
+        </div>
+    )
+}
+

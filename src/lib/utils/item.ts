@@ -12,7 +12,7 @@ export async function generateItemNumber(): Promise<string> {
     const lastItem = await prisma.item.findFirst({
         where: {
             itemNumber: {
-                startsWith: `ART${year}${month}`
+                startsWith: `ITM${year}${month}`
             }
         },
         orderBy: {
@@ -27,14 +27,14 @@ export async function generateItemNumber(): Promise<string> {
         sequenceNumber = 1;
     } else {
         // Extract the sequence number from the last item number
-        // Format: ART2401000001 -> extract the last 6 digits
+        // Format: ITM2501000001  -> extract the last 6 digits
         const lastSequence = parseInt(lastItem.itemNumber.slice(-6));
         sequenceNumber = lastSequence + 1;
     }
 
-    // Format: ART + YY + MM + 000001
-    // Example: ART2401000001
-    const formattedNumber = `ART${year}${month}${sequenceNumber.toString().padStart(6, '0')}`;
+    // Format: ATM + YY + MM + 000001
+    // Example: ITM2501000001
+    const formattedNumber = `ITM${year}${month}${sequenceNumber.toString().padStart(6, '0')}`;
 
     return formattedNumber;
 }

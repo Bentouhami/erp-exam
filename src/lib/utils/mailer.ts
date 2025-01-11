@@ -11,7 +11,7 @@ import {API_DOMAIN, DOMAIN} from "@/lib/utils/constants";
  */
 
 export async function sendVerificationEmail(name: string, email: string, token: string) {
-    console.log("log ====> sendVerificationEmail function called in src/lib/mailer.ts");
+    console.log("log ====> sendVerificationEmail function called in src/lib/mailer.ts", {name, email});
 
     if (!name || !email || !token) {
         throw new Error("Missing required parameters");

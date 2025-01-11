@@ -1,47 +1,52 @@
 // path: src/components/charts/LineChart.tsx
 
-// src/components/charts/LineChart.tsx
-'use client';
+"use client"
 
-import React from 'react';
-import {
-    LineChart as RechartsLineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer
-} from 'recharts';
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 
-const data = [
-    { name: 'Jan', value: 4000 },
-    { name: 'Feb', value: 3000 },
-    { name: 'Mar', value: 5000 },
-    { name: 'Apr', value: 2780 },
-    { name: 'May', value: 1890 },
-    { name: 'Jun', value: 2390 },
-    { name: 'Jul', value: 3490 },
-];
+interface DataPoint {
+    date: string
+    value: number
+}
 
-const LineChart = () => {
+interface LineChartProps {
+    data: DataPoint[]
+    title: string
+    description: string
+    dataKey: string
+    color: string
+}
+
+export function LineChartComponent({ data, title, description, dataKey, color }: LineChartProps) {
     return (
-        <ResponsiveContainer width="100%" height={300}>
-            <RechartsLineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#8884d8"
-                    strokeWidth={2}
-                    dot={{ strokeWidth: 2 }}
-                />
-            </RechartsLineChart>
-        </ResponsiveContainer>
-    );
-};
+        <Card>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+                <ChartContainer
+                    config={{
+                        [dataKey]: {
+                            label: title,
+                            color: color,
+                        },
+                    }}
+                    className="h-[300px]"
+                >
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={data}>
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Line type="monotone" dataKey={dataKey} strokeWidth={2} activeDot={{ r: 8 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    )
+}
 
-export default LineChart;

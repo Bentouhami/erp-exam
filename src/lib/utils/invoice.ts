@@ -2,13 +2,17 @@
 
 import prisma from "@/lib/db";
 export async function generateInvoiceNumber(): Promise<string> {
-    const year = new Date().getFullYear();
+
+    // Get the current year and month
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2); // Get last 2 digits of year
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
 
     // Rechercher la dernière facture émise pour l'année en cours
     const lastInvoice = await prisma.invoice.findFirst({
         where: {
             invoiceNumber: {
-                startsWith: `${year}-`, // Factures commençant par l'année en cours
+                startsWith: `ART${year}${month}`
             },
         },
         orderBy: {
@@ -16,16 +20,17 @@ export async function generateInvoiceNumber(): Promise<string> {
         },
     });
 
-    let nextNumber = 1; // Par défaut, commence à 1 si aucune facture pour l'année
+    let nextNumber : number; // Par défaut, commence à 1 si aucune facture pour l'année
 
-    if (lastInvoice) {
+    if(!lastInvoice) {
+        nextNumber = 1;
+    } else {
         // Extraire le dernier numéro et l'incrémenter
         const lastNumberPart = parseInt(lastInvoice.invoiceNumber.split("-").pop() || "0", 10);
         nextNumber = lastNumberPart + 1;
     }
 
-    // Construire le numéro de facture au format "YYYY-XXXX"
-    const nextInvoiceNumber = `${year}-${nextNumber.toString().padStart(4, "0")}`;
-
+    // Example: ART2401000001
+    const nextInvoiceNumber = `INV${year}${month}${nextNumber.toString().padStart(6, '0')}`;
     return nextInvoiceNumber;
 }

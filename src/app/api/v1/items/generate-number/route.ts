@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ message: 'Item number not found' }, { status: 404 });
         }
         console.log("log ===> itemNumber in generate-number/route.ts: ", itemNumber);
-        return NextResponse.json({ itemNumber });
+        return NextResponse.json({itemNumber});
     } catch (error) {
         console.error('Error generating item number:', error);
         return NextResponse.json(

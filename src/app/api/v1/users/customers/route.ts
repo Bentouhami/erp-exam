@@ -1,21 +1,33 @@
+// path: src/app/api/v1/users/customers/route.ts
+
 import { NextResponse } from 'next/server'
 import prisma from "@/lib/db";
+import {decrypt} from "@/lib/security/security";
 
 export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search')
+
 
     const customers = await prisma.user.findMany({
         where: {
             role: 'CUSTOMER',
-            OR: search
-                ? [
-                    { name: { contains: search, mode: 'insensitive' } },
-                    { userNumber: { contains: search, mode: 'insensitive' } },
-                    { vatNumber: { contains: search, mode: 'insensitive' } },
-                ]
-                : undefined,
         },
+        select: {
+            id: true,
+            userNumber: true,
+            vatNumber: true,
+            firstName: true,
+            lastName: true,
+            name: true,
+            // email: true,
+            createdAt: true,
+        },
+    })
+
+    // decrypt sensitive names
+    customers.forEach(customer => {
+        customer.firstName = decrypt(customer.firstName!);
+        customer.lastName = decrypt(customer.lastName!);
+        customer.name = `${customer.firstName} ${customer.lastName}`
     })
 
     return NextResponse.json(customers)
