@@ -76,6 +76,9 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
 
     useEffect(() => {
         fetchUsersAndItems();
+    }, []);
+
+    useEffect(() => {
         if (invoiceId) {
             fetchInvoice(invoiceId);
         } else {
@@ -122,7 +125,13 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
     }
 
     const fetchInvoice = async (id: number) => {
+
+        if (!id) {
+            toast.error('InvoiceId not found')
+            return
+        }
         try {
+            console.log("log ====> id in fetchInvoice in path : src/components/InvoiceForm.tsx", id)
             const response = await axios.get(`${API_DOMAIN}/invoices/${id}`)
             if (response.status !== 200 || !response.data) {
                 throw new Error('Failed to fetch invoice')

@@ -12,7 +12,7 @@ export async function generateInvoiceNumber(): Promise<string> {
     const lastInvoice = await prisma.invoice.findFirst({
         where: {
             invoiceNumber: {
-                startsWith: `ART${year}${month}`
+                startsWith: `INV${year}${month}`
             },
         },
         orderBy: {
@@ -26,11 +26,11 @@ export async function generateInvoiceNumber(): Promise<string> {
         nextNumber = 1;
     } else {
         // Extraire le dernier numéro et l'incrémenter
-        const lastNumberPart = parseInt(lastInvoice.invoiceNumber.split("-").pop() || "0", 10);
-        nextNumber = lastNumberPart + 1;
+        const lastSequence = parseInt(lastInvoice.invoiceNumber.slice(-6));
+        nextNumber = lastSequence + 1;
     }
 
-    // Example: ART2401000001
+    // Example:     inv 2401000001
     const nextInvoiceNumber = `INV${year}${month}${nextNumber.toString().padStart(6, '0')}`;
     return nextInvoiceNumber;
 }

@@ -30,7 +30,7 @@ export default function CustomersPage() {
     }, [])
 
     const fetchCustomers = async () => {
-        const response = await fetch('/api/customers')
+        const response = await fetch('/api/v1/users/customers')
         const data = await response.json()
         setCustomers(data)
         setFilteredCustomers(data)
@@ -49,7 +49,7 @@ export default function CustomersPage() {
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold">Customers</h1>
-                <Link href="/customers/new">
+                <Link href="/dashboard/customers/new">
                     <Button>Add Customer</Button>
                 </Link>
             </div>

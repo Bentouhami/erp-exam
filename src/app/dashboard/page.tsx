@@ -1,3 +1,5 @@
+// path: src/app/dashboard/page.tsx
+
 import React from 'react';
 import DashboardCharts from "@/components/charts/DashboardCharts";
 

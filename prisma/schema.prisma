@@ -32,8 +32,6 @@ enum MovementType {
   PURCHASE
   SALE
   RETURN
-  TRANSFER
-  ADJUSTMENT
 }
 
 enum TokenType {
@@ -306,6 +304,8 @@ model Item {
   stockMovements StockMovement[] // Historique des mouvements de stock liés à l'article (ajout, retrait, etc.)
   invoiceDetails InvoiceDetail[] // Factures contenant cet article (ex. factures d'achat, factures de vente, etc.)
   itemTaxes      ItemTax[] // Taxes additionnelles appliquées à l'article (ex. taxe sur la valeur ajoutée, taxe sur le prix de vente, etc.)
+
+  itemStatus ItemStatus @default(ACTIVE) // Statut de l'article (actif ou inactif)
 
   @@index([itemNumber, supplierReference, label]) // Index pour faciliter la recherche
   @@map("items")

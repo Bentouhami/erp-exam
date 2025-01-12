@@ -1,3 +1,5 @@
+// path: src/app/api/v1/users/[id]/route.ts
+
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { decrypt, encrypt } from "@/lib/security/security"

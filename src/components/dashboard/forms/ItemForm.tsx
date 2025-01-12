@@ -69,7 +69,10 @@ export default function ItemForm({ itemId }: ItemFormProps) {
     }, [itemId]);
 
     const fetchItem = async (id: number) => {
-        if (!id) toast.error('ItemId not found');
+        if (!id) {
+            toast.error('ItemId not found');
+            return;
+        }
         try {
             const response = await fetch(`/api/v1/items/${id}`);
             if (!response.ok) {

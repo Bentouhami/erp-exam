@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import {decrypt} from "@/lib/security/security";
 
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')

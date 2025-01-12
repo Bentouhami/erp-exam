@@ -20,8 +20,6 @@ export enum MovementTypeDTO {
     PURCHASE = 'PURCHASE',
     SALE = 'SALE',
     RETURN = 'RETURN',
-    TRANSFER = 'TRANSFER',
-    ADJUSTMENT = 'ADJUSTMENT'
 }
 
 export enum TokenTypeDTO {
