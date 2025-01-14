@@ -20,6 +20,7 @@ import {ArrowUpDown, MoreHorizontal, Plus} from 'lucide-react'
 import {toast} from 'react-toastify'
 import axios from "axios";
 import {API_DOMAIN, DOMAIN} from "@/lib/utils/constants";
+import RequireAuth from "@/components/auth/RequireAuth";
 
 type Item = {
     id: number
@@ -143,80 +144,82 @@ export default function ItemList() {
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <Input
-                    type="text"
-                    placeholder="Search items..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                />
-                <Button onClick={handleAddItem}>
-                    <Plus className="mr-2 h-4 w-4"/> Add Item
-                </Button>
-            </div>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[100px]">
-                            <Button variant="ghost" onClick={() => handleSort('itemNumber')}>
-                                Item Number
-                                <ArrowUpDown className="ml-2 h-4 w-4"/>
-                            </Button>
-                        </TableHead>
-                        <TableHead>
-                            <Button variant="ghost" onClick={() => handleSort('label')}>
-                                Label
-                                <ArrowUpDown className="ml-2 h-4 w-4"/>
-                            </Button>
-                        </TableHead>
-                        <TableHead>
-                            <Button variant="ghost" onClick={() => handleSort('retailPrice')}>
-                                Retail Price
-                                <ArrowUpDown className="ml-2 h-4 w-4"/>
-                            </Button>
-                        </TableHead>
-                        <TableHead>
-                            <Button variant="ghost" onClick={() => handleSort('vatType')}>
-                                VAT Type
-                                <ArrowUpDown className="ml-2 h-4 w-4"/>
-                            </Button>
-                        </TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {filteredItems.map((item) => (
-                        <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.itemNumber}</TableCell>
-                            <TableCell>{item.label}</TableCell>
-                            <TableCell>{item.retailPrice} €</TableCell>
-                            <TableCell>{item.vatType}</TableCell>
-                            <TableCell className="text-right">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                            <span className="sr-only">Open menu</span>
-                                            <MoreHorizontal className="h-4 w-4"/>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem onClick={() => handleEditItem(item.id)}>
-                                            Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator/>
-                                        <DropdownMenuItem onClick={() => handleDeleteItem(item.id)}>
-                                            Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
+        <RequireAuth>
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <Input
+                        type="text"
+                        placeholder="Search items..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="max-w-sm"
+                    />
+                    <Button onClick={handleAddItem}>
+                        <Plus className="mr-2 h-4 w-4"/> Add Item
+                    </Button>
+                </div>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[100px]">
+                                <Button variant="ghost" onClick={() => handleSort('itemNumber')}>
+                                    Item Number
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                </Button>
+                            </TableHead>
+                            <TableHead>
+                                <Button variant="ghost" onClick={() => handleSort('label')}>
+                                    Label
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                </Button>
+                            </TableHead>
+                            <TableHead>
+                                <Button variant="ghost" onClick={() => handleSort('retailPrice')}>
+                                    Retail Price
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                </Button>
+                            </TableHead>
+                            <TableHead>
+                                <Button variant="ghost" onClick={() => handleSort('vatType')}>
+                                    VAT Type
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                </Button>
+                            </TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredItems.map((item) => (
+                            <TableRow key={item.id}>
+                                <TableCell className="font-medium">{item.itemNumber}</TableCell>
+                                <TableCell>{item.label}</TableCell>
+                                <TableCell>{item.retailPrice} €</TableCell>
+                                <TableCell>{item.vatType}</TableCell>
+                                <TableCell className="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                <span className="sr-only">Open menu</span>
+                                                <MoreHorizontal className="h-4 w-4"/>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuItem onClick={() => handleEditItem(item.id)}>
+                                                Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator/>
+                                            <DropdownMenuItem onClick={() => handleDeleteItem(item.id)}>
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </RequireAuth>
     )
 }

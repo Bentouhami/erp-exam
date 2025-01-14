@@ -14,7 +14,7 @@ interface RevenueChartProps {
 
 export function RevenueChart({ data }: RevenueChartProps) {
     return (
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-4 rounded-lg shadow hover:bg-yellow-50">
             <h3 className="text-lg font-semibold mb-4">Revenue Over Time</h3>
             <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">

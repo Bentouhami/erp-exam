@@ -5,7 +5,7 @@ import prisma from '@/lib/db'
 
 
 /**
- * Fetch invoice by id
+ * Fetch invoice by id with user and invoice details included
  * @param request
  * @param params
  * @constructor
@@ -28,6 +28,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         if (!invoice) {
             return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
         }
+
 
         return NextResponse.json(invoice)
     } catch (error) {

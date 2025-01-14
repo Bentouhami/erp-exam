@@ -286,13 +286,14 @@ model Item {
   label             String  @db.VarChar(100) // Libellé de l'article eg. "Chaussures de sport"
   image             String? // URL or path to the item's image
 
-  description   String? @db.Text // Description de l'article (ex. pour les articles de chaussures) eg. "Chaussures de sport"
-  purchasePrice Decimal @db.Decimal(10, 2) // Prix d'achat hors taxes (ex. pour les articles de chaussures) eg. 10 euros
-  retailPrice   Decimal @db.Decimal(10, 2) // Prix de vente au détail hors taxes (ex. pour les articles de chaussures) eg. 10 euros
-  stockQuantity Int     @default(0) // Quantité disponible en stock (ex. pour les articles de chaussures) eg. 10
-  minQuantity   Int     @default(0) // Quantité minimale avant réapprovisionnement (ex. pour les articles de chaussures) eg. 5
+  description   String?    @db.Text // Description de l'article (ex. pour les articles de chaussures) eg. "Chaussures de sport"
+  purchasePrice Decimal    @db.Decimal(10, 2) // Prix d'achat hors taxes (ex. pour les articles de chaussures) eg. 10 euros
+  retailPrice   Decimal    @db.Decimal(10, 2) // Prix de vente au détail hors taxes (ex. pour les articles de chaussures) eg. 10 euros
+  stockQuantity Int        @default(0) // Quantité disponible en stock (ex. pour les articles de chaussures) eg. 10
+  minQuantity   Int        @default(0) // Quantité minimale avant réapprovisionnement (ex. pour les articles de chaussures) eg. 5
   unitId        Int // Référence à l'unité de mesure (ex. "kg", "pcs")  de l'article
   classId       Int // Référence à la catégorie ou classe de l'article (ex. "Electronics", "Furniture", etc.)
+  itemStatus    ItemStatus @default(ACTIVE) // Statut de l'article (actif ou inactif)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -304,8 +305,6 @@ model Item {
   stockMovements StockMovement[] // Historique des mouvements de stock liés à l'article (ajout, retrait, etc.)
   invoiceDetails InvoiceDetail[] // Factures contenant cet article (ex. factures d'achat, factures de vente, etc.)
   itemTaxes      ItemTax[] // Taxes additionnelles appliquées à l'article (ex. taxe sur la valeur ajoutée, taxe sur le prix de vente, etc.)
-
-  itemStatus ItemStatus @default(ACTIVE) // Statut de l'article (actif ou inactif)
 
   @@index([itemNumber, supplierReference, label]) // Index pour faciliter la recherche
   @@map("items")

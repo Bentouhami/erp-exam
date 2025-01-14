@@ -52,6 +52,12 @@ interface InvoiceFormProps {
     invoiceId?: number
 }
 
+/**
+ * Invoice form component to create or update an invoice with form fields
+ * @param invoiceId
+ * @constructor
+ */
+
 export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
     const [users, setUsers] = useState<User[]>([])
     const [items, setItems] = useState<Item[]>([])
@@ -125,7 +131,6 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
     }
 
     const fetchInvoice = async (id: number) => {
-
         if (!id) {
             toast.error('InvoiceId not found')
             return

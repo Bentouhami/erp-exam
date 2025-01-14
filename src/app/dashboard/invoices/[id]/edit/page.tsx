@@ -2,6 +2,11 @@
 
 import InvoiceForm from '@/components/dashboard/forms/InvoiceForm'
 
+/**
+ * Edit invoice page component to edit an invoice
+ * @param params - id of the invoice to edit
+ * @constructor
+ */
 export default function EditInvoicePage({ params }: { params: { id: string } }) {
     return (
         <div className="container mx-auto py-10">
