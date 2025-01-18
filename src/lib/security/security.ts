@@ -33,6 +33,6 @@ export function decrypt(text: string): string {
 
 
 // Function to hash email using SHA-256
-export function hashEmail(email: string): string {
-    return crypto.createHash('sha256').update(email).digest('hex');
-}
+// export function hashEmail(email: string): string {
+//     return crypto.createHash('sha256').update(email).digest('hex');
+// }

@@ -1,10 +1,9 @@
 // path: src/app/api/v1/users/customers/route.ts
 
-import {NextResponse} from 'next/server'
+import {NextRequest, NextResponse} from 'next/server'
 import prisma from "@/lib/db";
-import {decrypt} from "@/lib/security/security";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
 
 
     const customers = await prisma.user.findMany({
@@ -25,20 +24,10 @@ export async function GET(request: Request) {
     })
 
     console.log('log ====> customers BEFORE decrypting', customers)
-
-    // decrypt sensitive names
-    customers.forEach(customer => {
-        customer.firstName = decrypt(customer.firstName!);
-        customer.lastName = decrypt(customer.lastName!);
-        customer.vatNumber = customer.vatNumber ? decrypt(customer.vatNumber) : null;
-        customer.name = `${customer.firstName} ${customer.lastName}`;
-    })
-
-    console.log('log ====> customers AFTER decrypting', customers)
     return NextResponse.json(customers)
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     const body = await request.json()
 
     const customer = await prisma.user.create({

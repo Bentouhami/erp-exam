@@ -1,10 +1,9 @@
 // path: src/app/api/v1/users/[id]/route.ts
 
-import { NextResponse } from 'next/server'
+import {NextRequest, NextResponse} from 'next/server'
 import prisma from '@/lib/db'
-import { decrypt, encrypt } from "@/lib/security/security"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
     try {
         const user = await prisma.user.findUnique({
             where: { id: params.id },
@@ -22,11 +21,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
-
-        // decrypt data before sending it to the client
-        user.email = decrypt(user.email)
-        user.firstName = decrypt(user.firstName)
-        user.lastName = decrypt(user.lastName)
+        //
+        // // decrypt data before sending it to the client
+        // user.email = decrypt(user.email)
+        // user.firstName = decrypt(user.firstName)
+        // user.lastName = decrypt(user.lastName)
 
         return NextResponse.json(user)
     } catch (error) {
@@ -35,7 +34,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
     try {
         const body = await request.json()
         const { firstName, lastName, email, role } = body
@@ -43,9 +42,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const updatedUser = await prisma.user.update({
             where: { id: params.id },
             data: {
-                firstName: encrypt(firstName),
-                lastName: encrypt(lastName),
-                email: encrypt(email),
+                firstName,
+                lastName,
+                email,
                 role,
             },
             select: {
@@ -59,10 +58,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             },
         })
 
-        // decrypt data before sending it to the client
-        updatedUser.email = decrypt(updatedUser.email)
-        updatedUser.firstName = decrypt(updatedUser.firstName)
-        updatedUser.lastName = decrypt(updatedUser.lastName)
+        // // decrypt data before sending it to the client
+        // updatedUser.email = decrypt(updatedUser.email)
+        // updatedUser.firstName = decrypt(updatedUser.firstName)
+        // updatedUser.lastName = decrypt(updatedUser.lastName)
 
         return NextResponse.json(updatedUser)
     } catch (error) {

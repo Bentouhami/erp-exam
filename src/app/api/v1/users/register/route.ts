@@ -4,12 +4,11 @@ import { TokenTypeDTO } from "@/services/dtos/UserDtos";
 import { generateUniqueUserNumber } from "@/services/UserService";
 import { saltAndHashPassword } from "@/lib/utils/auth-helper";
 import { sendVerificationEmail } from "@/lib/utils/mailer";
-import { generateUserToken } from "@/services/auth/TokenService";
-import { decrypt, encrypt, hashEmail } from "@/lib/security/security";
 import {
-    isUserAlreadyExistByEmailHash,
+    isUserAlreadyExistByEmail,
     isUserVerifiedById,
 } from "@/services/backend_Services/Bk_UserService";
+import {generateUserToken} from "@/services/auth/TokenService";
 
 export async function POST(req: NextRequest) {
     try {
@@ -23,6 +22,7 @@ export async function POST(req: NextRequest) {
         if (missingFields.length > 0) {
             return NextResponse.json({ message: `Missing required fields: ${missingFields.join(', ')}` }, { status: 400 });
         }
+
         if (userData.isEnterprise) {
             const requiredEnterpriseFields = ['companyName', 'vatNumber'];
             const missingEnterpriseFields = requiredEnterpriseFields.filter(field => !userData[field]);
@@ -34,27 +34,14 @@ export async function POST(req: NextRequest) {
             }
         }
 
-
-        // Validate enterprise-related fields
-        if (userData.isEnterprise) {
-            const requiredEnterpriseFields = ['companyName', 'vatNumber'];
-            const missingEnterpriseFields = requiredEnterpriseFields.filter(field => !userData[field]);
-            if (missingEnterpriseFields.length > 0) {
-                return NextResponse.json(
-                    { message: `Enterprise customers must provide: ${missingEnterpriseFields.join(', ')}` },
-                    { status: 400 }
-                );
-            }
-        } else {
-            // Nullify enterprise-specific fields for non-enterprise customers
+        // Nullify enterprise-specific fields for non-enterprise customers
+        if (!userData.isEnterprise) {
             ['companyName', 'vatNumber', 'companyNumber', 'exportNumber'].forEach(field => userData[field] = null);
         }
 
-        // Hash email for lookup
-        const emailHash = hashEmail(userData.email);
 
         // Check if the user already exists
-        const existingUser = await isUserAlreadyExistByEmailHash(emailHash);
+        const existingUser = await isUserAlreadyExistByEmail(userData.email);
         if (existingUser) {
             const isVerified = await isUserVerifiedById(existingUser.id);
             if (isVerified) {
@@ -68,28 +55,20 @@ export async function POST(req: NextRequest) {
         // Hash the password (if applicable)
         const pwHash = userData.password ? await saltAndHashPassword(userData.password) : undefined;
 
-        // Encrypt sensitive fields
-        const encryptedFields = {
-            name: encrypt(`${userData.firstName} ${userData.lastName}`),
-            firstName: encrypt(userData.firstName),
-            lastName: encrypt(userData.lastName),
-            email: encrypt(userData.email),
-            phone: encrypt(userData.phone || ""),
-            mobile: encrypt(userData.mobile || ""),
-            companyName: userData.companyName ? encrypt(userData.companyName) : null,
-            vatNumber: userData.vatNumber ? encrypt(userData.vatNumber) : null,
-            companyNumber: userData.companyNumber ? encrypt(userData.companyNumber) : null,
-            exportNumber: userData.exportNumber ? encrypt(userData.exportNumber) : null,
-        };
-
-        console.log("Encrypted fields:", encryptedFields);
-
         // Create the user in the database
         const newUser = await prisma.user.create({
             data: {
                 userNumber,
-                ...encryptedFields,
-                emailHash,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                name: `${userData.firstName} ${userData.lastName}`,
+                email: userData.email,
+                phone: userData.phone || null,
+                mobile: userData.mobile || null,
+                companyName: userData.companyName,
+                vatNumber: userData.vatNumber,
+                companyNumber: userData.companyNumber,
+                exportNumber: userData.exportNumber,
                 password: pwHash,
                 role: userData.role,
                 paymentTermDays: userData.paymentTermDays,
@@ -104,11 +83,12 @@ export async function POST(req: NextRequest) {
 
         // Generate and send a verification email
         const verificationToken = await generateUserToken(newUser.id, TokenTypeDTO.EMAIL_VERIFICATION, 1);
-        const decryptedEmail = decrypt(newUser.email);
-        const decryptedFirstName = decrypt(newUser.firstName);
-        const decryptedLastName = decrypt(newUser.lastName);
 
-        await sendVerificationEmail(`${decryptedFirstName} ${decryptedLastName}`, decryptedEmail, verificationToken.token);
+        await sendVerificationEmail(
+            `${newUser.firstName} ${newUser.lastName}`,
+            newUser.email,
+            verificationToken.token
+        );
 
         return NextResponse.json({ message: "User created successfully!" }, { status: 201 });
     } catch (error) {
@@ -116,4 +96,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: "Error creating user!" }, { status: 500 });
     }
 }
-

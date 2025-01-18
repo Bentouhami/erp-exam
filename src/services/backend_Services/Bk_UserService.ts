@@ -7,12 +7,12 @@ import {Simulate} from "react-dom/test-utils";
 /**
  * Check if a user already exists by email
  * @returns ID of the user if it exists, null otherwise
- * @param emailHash
+ * @param email
  */
-export async function isUserAlreadyExistByEmailHash(emailHash: string): Promise<Partial<any> | null> {
+export async function isUserAlreadyExistByEmail(email: string): Promise<Partial<any> | null> {
     const user = await prisma.user.findUnique({
-        where: { emailHash },
-        select: { id: true, name: true, emailHash: true }
+        where: { email },
+        select: { id: true, name: true, email: true }
     });
     return user ? user : null;
 }

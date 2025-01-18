@@ -2,9 +2,8 @@
 
 import {NextRequest, NextResponse} from 'next/server';
 import prisma from '@/lib/db';
-import {decrypt} from '@/lib/security/security';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     const {searchParams} = new URL(request.url);
     const search = searchParams.get('search');
     const sort = searchParams.get('sort') || 'issuedAt';
@@ -40,12 +39,12 @@ export async function GET(request: Request) {
             },
         });
 
-        // Decrypt sensitive fields before sending them to the client
-        invoices.forEach((invoice) => {
-            if (invoice.User?.name) {
-                invoice.User.name = decrypt(invoice.User.name);
-            }
-        });
+        // // Decrypt sensitive fields before sending them to the client
+        // invoices.forEach((invoice) => {
+        //     if (invoice.User?.name) {
+        //         invoice.User.name = decrypt(invoice.User.name);
+        //     }
+        // });
 
         return NextResponse.json(invoices);
     } catch (error) {

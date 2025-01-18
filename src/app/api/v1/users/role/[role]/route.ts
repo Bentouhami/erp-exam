@@ -1,7 +1,6 @@
 // src/app/api/v1/users/role/[role]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { decrypt } from '@/lib/security/security';
 
 export async function GET(req: NextRequest, { params }: { params: { role: string } }) {
     try {
@@ -41,12 +40,12 @@ export async function GET(req: NextRequest, { params }: { params: { role: string
                 createdAt: 'desc',
             },
         });
-
-        users.forEach(user => {
-            user.email = decrypt(user.email);
-            user.firstName = decrypt(user.firstName);
-            user.lastName = decrypt(user.lastName);
-        });
+        //
+        // users.forEach(user => {
+        //     user.email = decrypt(user.email);
+        //     user.firstName = decrypt(user.firstName);
+        //     user.lastName = decrypt(user.lastName);
+        // });
 
         return NextResponse.json(users);
     } catch (error) {

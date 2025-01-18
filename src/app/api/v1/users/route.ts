@@ -1,7 +1,6 @@
 // src/app/api/v1/users/route.ts
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { decrypt } from "@/lib/security/security"
 
 export async function GET() {
     try {
@@ -21,13 +20,13 @@ export async function GET() {
             },
         })
 
-        // decrypt data before sending it to the client
-        users.forEach(user => {
-            user.email = decrypt(user.email)
-            user.firstName = decrypt(user.firstName)
-            user.lastName = decrypt(user.lastName)
-            user.vatNumber = user.vatNumber ? decrypt(user.vatNumber) : null
-        })
+        // // decrypt data before sending it to the client
+        // users.forEach(user => {
+        //     user.email = decrypt(user.email)
+        //     user.firstName = decrypt(user.firstName)
+        //     user.lastName = decrypt(user.lastName)
+        //     user.vatNumber = user.vatNumber ? decrypt(user.vatNumber) : null
+        // })
 
         return NextResponse.json(users)
     } catch (error) {

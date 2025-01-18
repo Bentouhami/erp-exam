@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import bcrypt from "bcryptjs";
-import {decrypt, hashEmail} from "@/lib/security/security";
 
 /**
  * Authenticate user by email and password
@@ -18,11 +17,9 @@ export async function POST(req: NextRequest) {
         }
         console.log("email and password in path: src/app/api/v1/users/login/route.ts: ", email, password);
 
-        // hash email
-        const emailHash = hashEmail(email);
         // 2. Find the user by email in the database
         const user = await prisma.user.findUnique({
-            where: { emailHash },
+            where: { email },
             select: {
                 id: true,
                 firstName: true,
@@ -59,14 +56,7 @@ export async function POST(req: NextRequest) {
 
         console.log("userWithoutPassword in path: src/app/api/v1/users/login/route.ts: ", userWithoutPassword);
 
-        // decrypt userWithoutPassword data
-        // decrypt userWithoutPassword data
-        const decryptedFirstName = decrypt(userWithoutPassword.firstName);
-        const decryptedLastName = decrypt(userWithoutPassword.lastName);
-        const decryptedEmail = decrypt(userWithoutPassword.email);
-        userWithoutPassword.firstName = decryptedFirstName;
-        userWithoutPassword.lastName = decryptedLastName;
-        userWithoutPassword.email = decryptedEmail;
+
 
         // 6. Return the user data
         return NextResponse.json(userWithoutPassword, { status: 200 });
