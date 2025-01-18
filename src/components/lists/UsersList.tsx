@@ -1,12 +1,10 @@
-// path: src/components/users/UsersList.tsx
-
 'use client';
 
-import React, {useEffect, useState} from 'react';
-import {useRouter} from 'next/navigation';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,11 +12,12 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import {ArrowUpDown, MoreHorizontal} from 'lucide-react';
-import {toast} from 'react-toastify';
-import {ListSkeleton} from "@/components/skeletons/ListSkeleton";
+import { ArrowUpDown, MoreHorizontal } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { ListSkeleton } from "@/components/skeletons/ListSkeleton";
 import axios from "axios";
-import {API_DOMAIN} from "@/lib/utils/constants";
+import { API_DOMAIN } from "@/lib/utils/constants";
+import { format } from 'date-fns';
 
 type User = {
     id: string;
@@ -27,6 +26,10 @@ type User = {
     lastName: string;
     email: string;
     role: string;
+    isEnabled: boolean;
+    isVerified: boolean;
+    isEnterprise: boolean;
+    createdAt: Date;
 };
 
 type SortConfig = {
@@ -38,11 +41,11 @@ interface UsersListProps {
     role?: string;
 }
 
-export default function UsersList({role}: UsersListProps) {
+export default function UsersList({ role }: UsersListProps) {
     const [users, setUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortConfig, setSortConfig] = useState<SortConfig>({key: 'userNumber', direction: 'asc'});
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'userNumber', direction: 'asc' });
     const [currentPage, setCurrentPage] = useState(1);
     const [usersPerPage] = useState(10);
     const [loading, setLoading] = useState(true);
@@ -92,13 +95,12 @@ export default function UsersList({role}: UsersListProps) {
         }
     };
 
-
     const handleSort = (key: keyof User) => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig.key === key && sortConfig.direction === 'asc') {
             direction = 'desc';
         }
-        setSortConfig({key, direction});
+        setSortConfig({ key, direction });
 
         const sortedUsers = [...filteredUsers].sort((a, b) => {
             if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
@@ -137,13 +139,11 @@ export default function UsersList({role}: UsersListProps) {
     const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
     if (loading) {
-        return <ListSkeleton/>;
+        return <ListSkeleton />;
     }
 
     return (
         <div className="space-y-4">
-
-            {/* Search section */}
             <Input
                 type="text"
                 placeholder="Search users..."
@@ -152,38 +152,61 @@ export default function UsersList({role}: UsersListProps) {
                 className="max-w-sm"
             />
 
-            {/* Users' table */}
             <Table>
                 <TableHeader>
                     <TableRow>
                         <TableHead>
                             <Button variant="ghost" onClick={() => handleSort('userNumber')}>
                                 User Number
-                                <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
                             </Button>
                         </TableHead>
                         <TableHead>
                             <Button variant="ghost" onClick={() => handleSort('firstName')}>
                                 First Name
-                                <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
                             </Button>
                         </TableHead>
                         <TableHead>
                             <Button variant="ghost" onClick={() => handleSort('lastName')}>
                                 Last Name
-                                <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
                             </Button>
                         </TableHead>
                         <TableHead>
                             <Button variant="ghost" onClick={() => handleSort('email')}>
                                 Email
-                                <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
                             </Button>
                         </TableHead>
                         <TableHead>
                             <Button variant="ghost" onClick={() => handleSort('role')}>
                                 Role
-                                <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </TableHead>
+                        <TableHead>
+                            <Button variant="ghost" onClick={() => handleSort('isEnterprise')}>
+                                Enterprise
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </TableHead>
+                        <TableHead>
+                            <Button variant="ghost" onClick={() => handleSort('isVerified')}>
+                                Verified
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </TableHead>
+                        <TableHead>
+                            <Button variant="ghost" onClick={() => handleSort('isEnabled')}>
+                                Enabled
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </TableHead>
+                        <TableHead>
+                            <Button variant="ghost" onClick={() => handleSort('createdAt')}>
+                                Created At
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
                             </Button>
                         </TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -197,18 +220,34 @@ export default function UsersList({role}: UsersListProps) {
                             <TableCell>{user.lastName}</TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell>{user.role}</TableCell>
+                            <TableCell>
+                                <span className={user.isEnterprise ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                                    {user.isEnterprise ? "Yes" : "No"}
+                                </span>
+                            </TableCell>
+                            <TableCell>
+                                <span className={user.isVerified ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                                    {user.isVerified ? "Yes" : "No"}
+                                </span>
+                            </TableCell>
+                            <TableCell>
+                                <span className={user.isEnabled ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                                    {user.isEnabled ? "Yes" : "No"}
+                                </span>
+                            </TableCell>
+                            <TableCell>{format(new Date(user.createdAt), 'dd-MM-yyyy')}</TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" className="h-8 w-8 p-0">
                                             <span className="sr-only">Open menu</span>
-                                            <MoreHorizontal className="h-4 w-4"/>
+                                            <MoreHorizontal className="h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end"> <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuItem onClick={() => handleEdit(user.id)}>Edit</DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() => handleDelete(user.id)}>Delete</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleDelete(user.id)}>Delete</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
@@ -224,8 +263,7 @@ export default function UsersList({role}: UsersListProps) {
                     <Button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
                         Previous
                     </Button>
-                    <Button onClick={() => paginate(currentPage + 1)}
-                            disabled={indexOfLastUser >= filteredUsers.length}>
+                    <Button onClick={() => paginate(currentPage + 1)} disabled={indexOfLastUser >= filteredUsers.length}>
                         Next
                     </Button>
                 </div>
@@ -233,3 +271,4 @@ export default function UsersList({role}: UsersListProps) {
         </div>
     );
 }
+

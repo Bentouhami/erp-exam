@@ -1,19 +1,19 @@
-// path: src/app/api/v1/vats/route.ts
-
-import {NextRequest, NextResponse} from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 
-/**
- * GET Method to get all vat types
- * @param req - The request object
- * @returns A response object with the status code and the vat types
- */
 export async function GET(req: NextRequest) {
     if (req.method !== "GET") {
-        return NextResponse.json({message: "Method not allowed!"}, {status: 405});
+        return NextResponse.json({ message: "Method not allowed!" }, { status: 405 });
     }
+
     try {
-        const vatTypes = await prisma.vat.findMany({
+        // Get countryId from query parameters
+        const url = new URL(req.url);
+        const countryId = url.searchParams.get('countryId');
+
+        // Build the query based on whether countryId is provided
+        const query = {
+            where: countryId ? { countryId: parseInt(countryId) } : {},
             select: {
                 id: true,
                 vatPercent: true,
@@ -26,14 +26,21 @@ export async function GET(req: NextRequest) {
                     }
                 },
             }
-        });
+        };
+
+        const vatTypes = await prisma.vat.findMany(query);
+
         if (!vatTypes) {
-            return NextResponse.json({message: "Vat types not found!"}, {status: 404});
+            console.log("log ====> GET /api/v1/vats - vatTypes not found");
+            return NextResponse.json({ message: "Vat types not found!" }, { status: 404 });
         }
+
+        console.log("log ====> GET /api/v1/vats - vatTypes found", vatTypes);
         return NextResponse.json(
-            {vatTypes}, {status: 200} // 200 OK
+            { vatTypes },
+            { status: 200 }
         );
     } catch (error) {
-        return NextResponse.json({message: "Error retrieving vat types!"}, {status: 500});
+        return NextResponse.json({ message: "Error retrieving vat types!" }, { status: 500 });
     }
 }

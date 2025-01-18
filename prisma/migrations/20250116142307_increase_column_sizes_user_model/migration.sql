@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "users" ALTER COLUMN "companyNumber" SET DATA TYPE TEXT,
+ALTER COLUMN "exportNumber" SET DATA TYPE TEXT;

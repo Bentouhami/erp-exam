@@ -13,6 +13,7 @@ export async function GET() {
                 lastName: true,
                 email: true,
                 role: true,
+                vatNumber: true,
                 createdAt: true,
             },
             orderBy: {
@@ -25,6 +26,7 @@ export async function GET() {
             user.email = decrypt(user.email)
             user.firstName = decrypt(user.firstName)
             user.lastName = decrypt(user.lastName)
+            user.vatNumber = user.vatNumber ? decrypt(user.vatNumber) : null
         })
 
         return NextResponse.json(users)

@@ -2,26 +2,28 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import React, {useEffect, useState} from 'react';
+import {useToast} from '@/hooks/use-toast';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
 interface Unit {
     id: number;
     name: string;
 }
 
-interface UnitDropDownProps {
-    onSubmit: (unitId: string) => void;
-    selectedUnitId?: string;
+interface ItemUnitDropDownProps {
+    selectedUnitId: string | number;
+    onSelect: (unitId: string | number) => void;
 }
 
-export default function UnitsDropDown({ onSubmit, selectedUnitId }: UnitDropDownProps) {
+export default function UnitsDropDown({ selectedUnitId, onSelect }: ItemUnitDropDownProps) {
     const [units, setUnits] = useState<Unit[]>([]);
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         // Fetch all units
+        setLoading(true);
         fetch('/api/v1/units')
             .then(async (response) => {
                 if (!response.ok) {
@@ -33,27 +35,29 @@ export default function UnitsDropDown({ onSubmit, selectedUnitId }: UnitDropDown
             .catch((error) => {
                 console.error('Error fetching units:', error);
                 toast('Failed to fetch units', { type: 'error' });
+            })
+            .finally(() => {
+                setLoading(false);
             });
     }, []);
 
-    return (
-        <div className="space-y-2">
+    if (loading) return <div>Loading units...</div>;
 
-            <select
-                id="unit"
-                name="unit"
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={selectedUnitId || ''}
-                onChange={(e) => onSubmit(e.target.value)}
-                disabled={loading}
-            >
-                <option value="">Select a unit</option>
+    return (
+        <Select
+            onValueChange={(value: string) => onSelect(value)}
+            defaultValue={selectedUnitId ? selectedUnitId.toString() : undefined}
+        >
+            <SelectTrigger>
+                <SelectValue placeholder="Select a unit" />
+            </SelectTrigger>
+            <SelectContent>
                 {units.map((unit) => (
-                    <option key={unit.id} value={unit.id.toString()}>
+                    <SelectItem key={unit.id} value={unit.id.toString()}>
                         {unit.name}
-                    </option>
+                    </SelectItem>
                 ))}
-            </select>
-        </div>
+            </SelectContent>
+        </Select>
     );
 }

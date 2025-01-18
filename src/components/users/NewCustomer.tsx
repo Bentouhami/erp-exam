@@ -1,3 +1,5 @@
+// path: src/components/users/NewCustomer.tsx
+
 'use client'
 
 import React from 'react';

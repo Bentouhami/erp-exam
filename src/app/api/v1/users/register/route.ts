@@ -1,136 +1,119 @@
-import {NextRequest, NextResponse} from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import {TokenTypeDTO} from "@/services/dtos/UserDtos";
-import {generateUniqueUserNumber} from "@/services/UserService";
-import {saltAndHashPassword} from "@/lib/utils/auth-helper";
-import {sendVerificationEmail} from "@/lib/utils/mailer";
-import {generateUserToken} from "@/services/auth/TokenService";
-import {decrypt, encrypt, hashEmail} from "@/lib/security/security";
+import { TokenTypeDTO } from "@/services/dtos/UserDtos";
+import { generateUniqueUserNumber } from "@/services/UserService";
+import { saltAndHashPassword } from "@/lib/utils/auth-helper";
+import { sendVerificationEmail } from "@/lib/utils/mailer";
+import { generateUserToken } from "@/services/auth/TokenService";
+import { decrypt, encrypt, hashEmail } from "@/lib/security/security";
 import {
     isUserAlreadyExistByEmailHash,
-    isUserVerificationTokenExpired,
-    isUserVerifiedById
+    isUserVerifiedById,
 } from "@/services/backend_Services/Bk_UserService";
 
-/**
- * Create a new user
- * @param req type: NextRequest
- */
 export async function POST(req: NextRequest) {
-    if (req.method !== "POST") {
-        return NextResponse.json({message: "Method not allowed!"}, {status: 405});
-    }
     try {
-        // 1. Get user data from request body
         const userData = await req.json();
 
-        console.log("log ====> userData in src/app/api/v1/users/route.ts ===> userData", userData);
+        console.log("Incoming user data:", userData);
 
-        // // 2. Check if user data is valid
-        // if (!userData.firstName || !userData.lastName || !userData.email || !userData.password || !userData.phone || !userData.mobile || !userData.companyName || !userData.vatNumber || !userData.companyNumber || !userData.exportNumber || !userData.role) {
-        //
-        //     console.log("log ====> userData in src/app/api/v1/users/route.ts after check ===> userData");
-        //
-        //     return NextResponse.json({ message: "Invalid user data!" }, { status: 400 });
-        // }
-
-
-        // 3. Hash the email for lookup
-        const emailHash = hashEmail(userData.email);
-
-        // 4. Check if a user already exists by email hash
-        const existingUser = await isUserAlreadyExistByEmailHash(emailHash);
-        const isCustomer = userData.role === 'CUSTOMER';
-
-        if (existingUser && !isCustomer) {
-
-            console.log("log ====> existingUser in src/app/api/v1/users/route.ts ===> existingUser", existingUser);
-
-            // is the existed user email verified?
-            const isVerified = await isUserVerifiedById(existingUser.id)
-
-            if (isVerified) {
-                console.log(" email is verified");
-                return NextResponse.json({message: "User already exists!"}, {status: 409}); // Use 409 for conflict
+        // Validate required fields
+        const requiredFields = ['firstName', 'lastName', 'email', 'role'];
+        const missingFields = requiredFields.filter(field => !userData[field]);
+        if (missingFields.length > 0) {
+            return NextResponse.json({ message: `Missing required fields: ${missingFields.join(', ')}` }, { status: 400 });
+        }
+        if (userData.isEnterprise) {
+            const requiredEnterpriseFields = ['companyName', 'vatNumber'];
+            const missingEnterpriseFields = requiredEnterpriseFields.filter(field => !userData[field]);
+            if (missingEnterpriseFields.length > 0) {
+                return NextResponse.json(
+                    { message: `Enterprise customers must provide: ${missingEnterpriseFields.join(', ')}` },
+                    { status: 400 }
+                );
             }
-
-
-            // is token expired
-            const isTokenExpired = await isUserVerificationTokenExpired(existingUser.id);
-
-            // if token expired generate new token
-            if (isTokenExpired) {
-
-                console.log('log ====> token expired in src/app/api/v1/users/route.ts ===> token expired');
-
-
-                const newVerificationToken = await generateUserToken(existingUser.id, TokenTypeDTO.EMAIL_VERIFICATION, 1)
-                // send the new email verification
-
-                await sendVerificationEmail(existingUser.id, decrypt(existingUser.email), newVerificationToken.token)
-            }
-
-            console.log('log ====> token NOT expired in src/app/api/v1/users/route.ts ===> token expired');
-
-            await sendVerificationEmail(existingUser.id, decrypt(existingUser.email), existingUser.userVerificationToken[0].token)
-
-        } else if (existingUser && isCustomer) {
-            return NextResponse.json({message: "User already exists!"}, {status: 409});
         }
 
+
+        // Validate enterprise-related fields
+        if (userData.isEnterprise) {
+            const requiredEnterpriseFields = ['companyName', 'vatNumber'];
+            const missingEnterpriseFields = requiredEnterpriseFields.filter(field => !userData[field]);
+            if (missingEnterpriseFields.length > 0) {
+                return NextResponse.json(
+                    { message: `Enterprise customers must provide: ${missingEnterpriseFields.join(', ')}` },
+                    { status: 400 }
+                );
+            }
+        } else {
+            // Nullify enterprise-specific fields for non-enterprise customers
+            ['companyName', 'vatNumber', 'companyNumber', 'exportNumber'].forEach(field => userData[field] = null);
+        }
+
+        // Hash email for lookup
+        const emailHash = hashEmail(userData.email);
+
+        // Check if the user already exists
+        const existingUser = await isUserAlreadyExistByEmailHash(emailHash);
+        if (existingUser) {
+            const isVerified = await isUserVerifiedById(existingUser.id);
+            if (isVerified) {
+                return NextResponse.json({ message: "User already exists!" }, { status: 409 });
+            }
+        }
+
+        // Generate unique user number
         const userNumber = await generateUniqueUserNumber(userData.role);
 
-        // 6. Hash the password
-        const pwHash = await saltAndHashPassword(userData.password);
+        // Hash the password (if applicable)
+        const pwHash = userData.password ? await saltAndHashPassword(userData.password) : undefined;
 
-        // 7. Encrypt sensitive fields
-        const encryptedName = encrypt(`${userData.firstName} ${userData.lastName}`);
-        const encryptedEmail = encrypt(userData.email);
-        const encryptedPhone = encrypt(userData.phone || '');
-        const encryptedMobile = encrypt(userData.mobile || '');
+        // Encrypt sensitive fields
+        const encryptedFields = {
+            name: encrypt(`${userData.firstName} ${userData.lastName}`),
+            firstName: encrypt(userData.firstName),
+            lastName: encrypt(userData.lastName),
+            email: encrypt(userData.email),
+            phone: encrypt(userData.phone || ""),
+            mobile: encrypt(userData.mobile || ""),
+            companyName: userData.companyName ? encrypt(userData.companyName) : null,
+            vatNumber: userData.vatNumber ? encrypt(userData.vatNumber) : null,
+            companyNumber: userData.companyNumber ? encrypt(userData.companyNumber) : null,
+            exportNumber: userData.exportNumber ? encrypt(userData.exportNumber) : null,
+        };
 
+        console.log("Encrypted fields:", encryptedFields);
 
-        // 8. Create the user in the database
+        // Create the user in the database
         const newUser = await prisma.user.create({
             data: {
-                userNumber: userNumber,
-                name: encryptedName,
-                firstName: encrypt(userData.firstName),
-                lastName: encrypt(userData.lastName),
-                email: encryptedEmail,      // Encrypted email for confidentiality
-                emailHash: emailHash,        // Hashed email for lookup
+                userNumber,
+                ...encryptedFields,
+                emailHash,
                 password: pwHash,
-                phone: encryptedPhone,
-                mobile: encryptedMobile,
                 role: userData.role,
+                paymentTermDays: userData.paymentTermDays,
+                isEnterprise: userData.isEnterprise,
                 isVerified: false,
             },
         });
 
         if (!newUser) {
-            return NextResponse.json({message: "Error creating user!"}, {status: 500});
+            return NextResponse.json({ message: "Error creating user!" }, { status: 500 });
         }
 
-        // 9. Generate a verification token
+        // Generate and send a verification email
         const verificationToken = await generateUserToken(newUser.id, TokenTypeDTO.EMAIL_VERIFICATION, 1);
-
-        if (!verificationToken || !verificationToken.token) {
-            return NextResponse.json({message: "Error creating verification token!"}, {status: 500});
-        }
-
-        // 10. Decrypt the new user's data for email sending
         const decryptedEmail = decrypt(newUser.email);
         const decryptedFirstName = decrypt(newUser.firstName);
         const decryptedLastName = decrypt(newUser.lastName);
-        const decryptedName = `${decryptedFirstName} ${decryptedLastName}`;
 
-        // 11. Send the confirmation email
-        await sendVerificationEmail(decryptedName, decryptedEmail, verificationToken.token);
+        await sendVerificationEmail(`${decryptedFirstName} ${decryptedLastName}`, decryptedEmail, verificationToken.token);
 
-        return NextResponse.json({message: "User created successfully. Please verify your account."}, {status: 201});
-
+        return NextResponse.json({ message: "User created successfully!" }, { status: 201 });
     } catch (error) {
-        console.error("Error creating admin:", error);
-        return NextResponse.json({message: "Error creating admin!"}, {status: 500});
+        console.error("Error creating user:", error);
+        return NextResponse.json({ message: "Error creating user!" }, { status: 500 });
     }
 }
+

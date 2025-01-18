@@ -4,9 +4,9 @@
 
 import React from 'react';
 import * as z from 'zod';
-import { Input } from "@/components/ui/input";
-import {  FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useFormContext, UseFormSetValue } from 'react-hook-form';
+import {Input} from "@/components/ui/input";
+import {FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
+import {useFormContext, UseFormSetValue} from 'react-hook-form';
 
 // Create a base schema without a password
 export const baseFields = {
@@ -39,6 +39,7 @@ export type CustomerFormData = {
     email: string;
     phone?: string;
     mobile?: string;
+    isEnterprise: boolean;
     companyName?: string;
     vatNumber?: string;
     companyNumber?: string;
@@ -55,8 +56,8 @@ type BaseUserFormProps = {
     role: 'ADMIN' | 'ACCOUNTANT' | 'SUPER_ADMIN' | 'CUSTOMER';
 };
 
-export const BaseUserForm: React.FC<BaseUserFormProps> = ({  role }) => {
-    const { control } = useFormContext<CustomerFormData>();
+export const BaseUserForm: React.FC<BaseUserFormProps> = ({role}) => {
+    const {control} = useFormContext<CustomerFormData>();
     const isCustomer = role === 'CUSTOMER';
 
     return (
@@ -64,39 +65,39 @@ export const BaseUserForm: React.FC<BaseUserFormProps> = ({  role }) => {
             <FormField
                 control={control}
                 name="firstName"
-                render={({ field }) => (
+                render={({field}) => (
                     <FormItem>
                         <FormLabel>First Name</FormLabel>
                         <FormControl>
                             <Input placeholder="John" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage/>
                     </FormItem>
                 )}
             />
             <FormField
                 control={control}
                 name="lastName"
-                render={({ field }) => (
+                render={({field}) => (
                     <FormItem>
                         <FormLabel>Last Name</FormLabel>
                         <FormControl>
                             <Input placeholder="Doe" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage/>
                     </FormItem>
                 )}
             />
             <FormField
                 control={control}
                 name="email"
-                render={({ field }) => (
+                render={({field}) => (
                     <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
                             <Input type="email" placeholder="john.doe@example.com" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage/>
                     </FormItem>
                 )}
             />
@@ -104,13 +105,13 @@ export const BaseUserForm: React.FC<BaseUserFormProps> = ({  role }) => {
                 <FormField
                     control={control}
                     name="password"
-                    render={({ field }) => (
+                    render={({field}) => (
                         <FormItem>
                             <FormLabel>Password</FormLabel>
                             <FormControl>
                                 <Input type="password" placeholder="********" {...field} />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage/>
                         </FormItem>
                     )}
                 />
@@ -118,26 +119,26 @@ export const BaseUserForm: React.FC<BaseUserFormProps> = ({  role }) => {
             <FormField
                 control={control}
                 name="phone"
-                render={({ field }) => (
+                render={({field}) => (
                     <FormItem>
                         <FormLabel>Phone (optional)</FormLabel>
                         <FormControl>
                             <Input placeholder="+1234567890" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage/>
                     </FormItem>
                 )}
             />
             <FormField
                 control={control}
                 name="mobile"
-                render={({ field }) => (
+                render={({field}) => (
                     <FormItem>
                         <FormLabel>Mobile (optional)</FormLabel>
                         <FormControl>
                             <Input placeholder="+1234567890" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage/>
                     </FormItem>
                 )}
             />

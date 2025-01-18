@@ -18,6 +18,9 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
             },
             async authorize(credentials): Promise<User | null> {
                 try {
+                    if(!credentials.email || !credentials.password) {
+                        throw new Error("Email and password are required.");
+                    }
                     // 1. Call the login route via apiCalls
                     // const encryptedEmail = encrypt(credentials.email as string);
                     const user = await apiCalls.getUserByEmail({

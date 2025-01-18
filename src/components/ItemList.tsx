@@ -1,152 +1,181 @@
-// Path: src/components/ItemList.tsx
+'use client';
 
-'use client'
-
-import React, {useEffect, useState} from 'react'
-import {useRouter} from 'next/navigation'
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
-import {Button} from "@/components/ui/button"
-import {Input} from "@/components/ui/input"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {Skeleton} from "@/components/ui/skeleton"
-import {ArrowUpDown, MoreHorizontal, Plus} from 'lucide-react'
-import {toast} from 'react-toastify'
-import axios from "axios";
-import {API_DOMAIN, DOMAIN} from "@/lib/utils/constants";
-import RequireAuth from "@/components/auth/RequireAuth";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ArrowUpDown, MoreHorizontal, Plus } from 'lucide-react';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import { API_DOMAIN, DOMAIN } from '@/lib/utils/constants';
+import RequireAuth from '@/components/auth/RequireAuth';
+import { ListSkeleton } from '@/components/skeletons/ListSkeleton';
 
 type Item = {
-    id: number
-    itemNumber: string
-    label: string
-    description: string
-    retailPrice: number
-    vatType: 'REDUCED' | 'STANDARD' | 'EXEMPT'
-}
+    id: number;
+    itemNumber: string;
+    label: string;
+    description: string;
+    retailPrice: number;
+    purchasePrice: number;
+    vat: {
+        id: number;
+        vatType: string;
+        vatPercent: number;
+    };
+    unit: {
+        id: number;
+        name: string;
+    };
+    itemClass: {
+        id: number;
+        label: string;
+    };
+    stockQuantity: number;
+    minQuantity: number;
+};
 
 type SortConfig = {
-    key: keyof Item
-    direction: 'asc' | 'desc'
-}
+    key: keyof Item;
+    direction: 'asc' | 'desc';
+};
 
 export default function ItemList() {
-    const [items, setItems] = useState<Item[]>([])
-    const [filteredItems, setFilteredItems] = useState<Item[]>([])
-    const [searchTerm, setSearchTerm] = useState('')
-    const [sortConfig, setSortConfig] = useState<SortConfig>({key: 'itemNumber', direction: 'asc'})
-    const [loading, setLoading] = useState(true)
-    const router = useRouter()
+    const [items, setItems] = useState<Item[]>([]);
+    const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedVat, setSelectedVat] = useState<string>('');
+    const [selectedUnit, setSelectedUnit] = useState<string>('');
+    const [selectedClass, setSelectedClass] = useState<string>('');
+    const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'itemNumber', direction: 'asc' });
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
-        fetchItems()
-    }, [])
+        fetchItems();
+    }, []);
 
     useEffect(() => {
-        const filtered = items.filter(item =>
-            item.itemNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.label.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        setFilteredItems(filtered)
-    }, [searchTerm, items])
+        applyFilters();
+    }, [searchTerm, selectedVat, selectedUnit, selectedClass, priceRange, sortConfig, items]);
 
     const fetchItems = async () => {
-        setLoading(true)
+        setLoading(true);
         try {
-            const response = await axios.get(`${API_DOMAIN}/items`)
+            const response = await axios.get(`${API_DOMAIN}/items`);
             if (response.status !== 200 || !response.data) {
-                throw new Error('Failed to fetch items')
+                throw new Error('Failed to fetch items');
             }
-            const data = await response.data
-            setItems(data)
-            setFilteredItems(data)
+            setItems(response.data);
+            setFilteredItems(response.data);
         } catch (error) {
-            console.error('Error fetching items:', error)
-            toast.error('Failed to fetch items')
+            console.error('Error fetching items:', error);
+            toast.error('Failed to fetch items');
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
+
+    const applyFilters = () => {
+        let filtered = [...items];
+
+        // Apply search filter
+        if (searchTerm) {
+            filtered = filtered.filter(
+                (item) =>
+                    item.itemNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    item.description.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        // Apply VAT filter
+        if (selectedVat) {
+            filtered = filtered.filter((item) => item.vat.id.toString() === selectedVat);
+        }
+
+        // Apply Unit filter
+        if (selectedUnit) {
+            filtered = filtered.filter((item) => item.unit.id.toString() === selectedUnit);
+        }
+
+        // Apply Class filter
+        if (selectedClass) {
+            filtered = filtered.filter((item) => item.itemClass.id.toString() === selectedClass);
+        }
+
+        // Apply price range filter
+        filtered = filtered.filter(
+            (item) => item.retailPrice >= priceRange.min && item.retailPrice <= priceRange.max
+        );
+
+        // Apply sorting
+        filtered = filtered.sort((a, b) => {
+            const { key, direction } = sortConfig;
+            if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+            if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        setFilteredItems(filtered);
+    };
 
     const handleSort = (key: keyof Item) => {
-        let direction: 'asc' | 'desc' = 'asc'
+        let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc'
+            direction = 'desc';
         }
-        setSortConfig({key, direction})
+        setSortConfig({ key, direction });
+    };
 
-        const sortedItems = [...filteredItems].sort((a, b) => {
-            if (a[key] < b[key]) return direction === 'asc' ? -1 : 1
-            if (a[key] > b[key]) return direction === 'asc' ? 1 : -1
-            return 0
-        })
-        setFilteredItems(sortedItems)
-    }
+    const paginatedItems = filteredItems.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const handleAddItem = () => {
-        router.push(`${DOMAIN}/dashboard/items/new`)
-    }
+        router.push(`${DOMAIN}/dashboard/items/new`);
+    };
 
     const handleEditItem = (itemId: number) => {
-        router.push(`${DOMAIN}/dashboard/items/${itemId}/edit`)
-    }
+        router.push(`${DOMAIN}/dashboard/items/${itemId}/edit`);
+    };
 
     const handleDeleteItem = async (itemId: number) => {
         if (window.confirm('Are you sure you want to delete this item?')) {
             try {
-                const response = await axios.delete(`${API_DOMAIN}/items/${itemId}`)
+                const response = await axios.delete(`${API_DOMAIN}/items/${itemId}`);
                 if (response.status !== 200 || !response.data) {
-                    throw new Error('Failed to delete item')
+                    throw new Error('Failed to delete item');
                 }
-                toast.success('Item deleted successfully')
-                fetchItems()
+                toast.success('Item deleted successfully');
+                fetchItems();
             } catch (error) {
-                console.error('Error deleting item:', error)
-                toast.error('Failed to delete item')
+                console.error('Error deleting item:', error);
+                toast.error('Failed to delete item');
             }
         }
-    }
+    };
+
+    // Extract unique VATs, Units, and Classes
+    const uniqueVats = Array.from(new Map(items.map((item) => [item.vat.id, item.vat])).values());
+    const uniqueUnits = Array.from(new Map(items.map((item) => [item.unit.id, item.unit])).values());
+    const uniqueClasses = Array.from(new Map(items.map((item) => [item.itemClass.id, item.itemClass])).values());
 
     if (loading) {
-        return (
-            <div className="space-y-4">
-                <Skeleton className="h-10 w-[250px]"/>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[100px]"><Skeleton className="h-4 w-[100px]"/></TableHead>
-                            <TableHead><Skeleton className="h-4 w-[100px]"/></TableHead>
-                            <TableHead><Skeleton className="h-4 w-[100px]"/></TableHead>
-                            <TableHead><Skeleton className="h-4 w-[100px]"/></TableHead>
-                            <TableHead className="text-right"><Skeleton className="h-4 w-[100px]"/></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {[...Array(5)].map((_, index) => (
-                            <TableRow key={index}>
-                                <TableCell><Skeleton className="h-4 w-[100px]"/></TableCell>
-                                <TableCell><Skeleton className="h-4 w-[100px]"/></TableCell>
-                                <TableCell><Skeleton className="h-4 w-[100px]"/></TableCell>
-                                <TableCell><Skeleton className="h-4 w-[100px]"/></TableCell>
-                                <TableCell className="text-right"><Skeleton className="h-4 w-[100px]"/></TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        )
+        return <ListSkeleton />;
     }
 
     return (
         <RequireAuth>
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
+                    {/* Search Input */}
                     <Input
                         type="text"
                         placeholder="Search items..."
@@ -154,53 +183,114 @@ export default function ItemList() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="max-w-sm"
                     />
+
+                    {/* VAT Filter */}
+                    <select
+                        value={selectedVat}
+                        onChange={(e) => setSelectedVat(e.target.value)}
+                        className="max-w-sm"
+                    >
+                        <option value="">All VAT Types</option>
+                        {uniqueVats.map((vat) => (
+                            <option key={vat.id} value={vat.id}>
+                                {vat.vatPercent}% ({vat.vatType})
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Unit Filter */}
+                    <select
+                        value={selectedUnit}
+                        onChange={(e) => setSelectedUnit(e.target.value)}
+                        className="max-w-sm"
+                    >
+                        <option value="">All Units</option>
+                        {uniqueUnits.map((unit) => (
+                            <option key={unit.id} value={unit.id}>
+                                {unit.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Class Filter */}
+                    <select
+                        value={selectedClass}
+                        onChange={(e) => setSelectedClass(e.target.value)}
+                        className="max-w-sm"
+                    >
+                        <option value="">All Classes</option>
+                        {uniqueClasses.map((itemClass) => (
+                            <option key={itemClass.id} value={itemClass.id}>
+                                {itemClass.label}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Add Item Button */}
                     <Button onClick={handleAddItem}>
-                        <Plus className="mr-2 h-4 w-4"/> Add Item
+                        <Plus className="mr-2 h-4 w-4" /> Add Item
                     </Button>
                 </div>
+
+                {/* Price Range Filter */}
+                <div className="flex space-x-2">
+                    <Input
+                        type="number"
+                        placeholder="Min Price"
+                        value={priceRange.min}
+                        onChange={(e) => setPriceRange({ ...priceRange, min: Number(e.target.value) })}
+                    />
+                    <Input
+                        type="number"
+                        placeholder="Max Price"
+                        value={priceRange.max}
+                        onChange={(e) => setPriceRange({ ...priceRange, max: Number(e.target.value) })}
+                    />
+                </div>
+
+                {/* Table */}
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[100px]">
+                            <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('itemNumber')}>
                                     Item Number
-                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                    <ArrowUpDown className="ml-2 h-4 w-4" />
                                 </Button>
                             </TableHead>
-                            <TableHead>
-                                <Button variant="ghost" onClick={() => handleSort('label')}>
-                                    Label
-                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
-                                </Button>
-                            </TableHead>
-                            <TableHead>
-                                <Button variant="ghost" onClick={() => handleSort('retailPrice')}>
-                                    Retail Price
-                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
-                                </Button>
-                            </TableHead>
-                            <TableHead>
-                                <Button variant="ghost" onClick={() => handleSort('vatType')}>
-                                    VAT Type
-                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
-                                </Button>
-                            </TableHead>
+                            <TableHead>Label</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Retail Price (€)</TableHead>
+                            <TableHead>Purchase Price (€)</TableHead>
+                            <TableHead>VAT</TableHead>
+                            <TableHead>Unit</TableHead>
+                            <TableHead>Class</TableHead>
+                            <TableHead>Stock</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredItems.map((item) => (
+                        {paginatedItems.map((item) => (
                             <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.itemNumber}</TableCell>
+                                <TableCell>{item.itemNumber}</TableCell>
                                 <TableCell>{item.label}</TableCell>
-                                <TableCell>{item.retailPrice} €</TableCell>
-                                <TableCell>{item.vatType}</TableCell>
+                                <TableCell>{item.description}</TableCell>
+                                <TableCell>{item.retailPrice.toFixed(2)}</TableCell>
+                                <TableCell>{item.purchasePrice.toFixed(2)}</TableCell>
+                                <TableCell>
+                                    {item.vat.vatPercent}% ({item.vat.vatType})
+                                </TableCell>
+                                <TableCell>{item.unit.name}</TableCell>
+                                <TableCell>{item.itemClass.label}</TableCell>
+                                <TableCell>
+                                    {item.stockQuantity} (Min: {item.minQuantity})
+                                </TableCell>
                                 <TableCell className="text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" className="h-8 w-8 p-0">
                                                 <span className="sr-only">Open menu</span>
-                                                <MoreHorizontal className="h-4 w-4"/>
+                                                <MoreHorizontal className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
@@ -208,7 +298,7 @@ export default function ItemList() {
                                             <DropdownMenuItem onClick={() => handleEditItem(item.id)}>
                                                 Edit
                                             </DropdownMenuItem>
-                                            <DropdownMenuSeparator/>
+                                            <DropdownMenuSeparator />
                                             <DropdownMenuItem onClick={() => handleDeleteItem(item.id)}>
                                                 Delete
                                             </DropdownMenuItem>
@@ -219,7 +309,26 @@ export default function ItemList() {
                         ))}
                     </TableBody>
                 </Table>
+
+                {/* Pagination */}
+                <div className="flex justify-between items-center">
+                    <Button
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <span>
+                        Page {currentPage} of {Math.ceil(filteredItems.length / itemsPerPage)}
+                    </span>
+                    <Button
+                        onClick={() => setCurrentPage((prev) => prev + 1)}
+                        disabled={currentPage * itemsPerPage >= filteredItems.length}
+                    >
+                        Next
+                    </Button>
+                </div>
             </div>
         </RequireAuth>
-    )
+    );
 }

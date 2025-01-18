@@ -2,6 +2,7 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
+  seed            = "node ./prisma/seed.js"
 }
 
 // Configuration de la base de données PostgreSQL
@@ -94,9 +95,10 @@ model User {
   lastName        String  @db.Text
   password        String?
   companyName     String? @db.Text
-  vatNumber       String? @db.VarChar(15) // Numéro de TVA (Taxe sur la Valeur Ajoutée) du client
-  companyNumber   String? @db.VarChar(15)
-  exportNumber    String? @db.VarChar(15)
+  isEnterprise    Boolean @default(false) // True for enterprises, false for individuals
+  vatNumber       String? @unique // Only enterprises will have this field
+  companyNumber   String? @unique @db.Text
+  exportNumber    String? @unique @db.Text
   isEnabled       Boolean @default(true)
   isVerified      Boolean @default(false)
   phone           String? @unique @db.Text
@@ -299,7 +301,8 @@ model Item {
   updatedAt DateTime @updatedAt
 
   // Relations
-  vatType        VatType
+  vatId          Int
+  vat            Vat             @relation(fields: [vatId], references: [id]) // Relates to the VAT table
   unit           Unit            @relation(fields: [unitId], references: [id]) // Unité de mesure de l'article (ex. "kg", "pcs")
   itemClass      ItemClass       @relation(fields: [classId], references: [id]) // Catégorie ou classe de l'article (ex. "Electronics", "Furniture", etc.)
   stockMovements StockMovement[] // Historique des mouvements de stock liés à l'article (ajout, retrait, etc.)
@@ -339,6 +342,7 @@ model InvoiceDetail {
   id            Int     @id @default(autoincrement())
   invoiceId     Int
   itemId        Int // Référence à l'article facturé
+  userId        String?
   lineNumber    Int // Numéro de ligne dans la facture
   quantity      Int     @default(1) // Quantité de l'article facturé
   discount      Decimal @default(0) @db.Decimal(5, 2) // Remise en pourcentage appliquée à la ligne
@@ -354,7 +358,6 @@ model InvoiceDetail {
   invoice Invoice @relation(fields: [invoiceId], references: [id]) // Facture associée à cette ligne
   item    Item    @relation(fields: [itemId], references: [id]) // Article facturé
   User    User?   @relation(fields: [userId], references: [id])
-  userId  String?
 
   @@map("invoice_details")
 }
@@ -426,7 +429,7 @@ model StockMovement {
 model Vat {
   id         Int     @id @default(autoincrement())
   countryId  Int
-  vatPercent Decimal @db.Decimal(5, 2)
+  vatPercent Decimal @db.Decimal(5, 2) // Percentage (e.g., 6.00 or 21.00)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -434,6 +437,7 @@ model Vat {
   // Relations
   vatType VatType
   country Country @relation(fields: [countryId], references: [id])
+  Item    Item[]
 
   @@unique([id, countryId]) // Ensure unique VAT rates per id and country
   @@map("vats")

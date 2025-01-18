@@ -92,3 +92,25 @@ main {
   overflow-y: auto;
 }
 
+.resizable {
+  resize: both; /* Allow both horizontal and vertical resizing */
+  overflow: auto; /* Enable scrolling when resized smaller */
+  border: 1px solid #ccc; /* Optional: Visual cue for resizing */
+  padding: 10px; /* Optional: Add padding for content */
+  min-width: 300px; /* Set a minimum width */
+  min-height: 200px; /* Set a minimum height */
+  max-width: 100%; /* Prevent resizing beyond the viewport */
+  max-height: 90vh; /* Prevent resizing beyond the viewport height */
+}
+
+.resizable:hover {
+  border: 1px solid #777; /* Optional: Visual cue for resizing */
+}
+
+/* Resizable */
+.resizable {
+  resize: both; /* Allow both horizontal and vertical resizing */
+}
+.resizable:hover {
+  border: 1px solid #777; /* Optional: Visual cue for resizing */
+}

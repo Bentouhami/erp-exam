@@ -37,12 +37,12 @@ export async function POST(req: NextRequest) {
 
         console.log("user in path: src/app/api/v1/users/login/route.ts: ", user);
 
-        if (!user) {
+        if (!user || !user.password) {
             return NextResponse.json({ message: "Invalid email or password!" }, { status: 401 });
         }
 
         // 3. Verify the password
-        const isPasswordValid = bcrypt.compare(password, user.password as string);
+        const isPasswordValid = await bcrypt.compare(password, user.password as string);
 
         if (!isPasswordValid) {
             return NextResponse.json({ message: "Invalid email or password!" }, { status: 401 });

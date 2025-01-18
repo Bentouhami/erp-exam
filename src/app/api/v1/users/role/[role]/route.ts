@@ -32,6 +32,9 @@ export async function GET(req: NextRequest, { params }: { params: { role: string
                 lastName: true,
                 email: true,
                 role: true,
+                isEnabled: true,
+                isVerified: true,
+                isEnterprise: true,
                 createdAt: true,
             },
             orderBy: {

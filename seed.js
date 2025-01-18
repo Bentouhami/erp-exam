@@ -1,29 +1,30 @@
 import fs from 'fs';
-import { PrismaClient } from '@prisma/client';
+import {PrismaClient} from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 
 async function seedDatabase() {
     try {
         console.log('Seeding the database...');
-
-        // 1. Add or verify the country "Belgium"
-        let belgium = await prisma.country.findUnique({
-            where: {countryCode: 'BE'},
-        });
-
-        if (!belgium) {
-            belgium = await prisma.country.create({
-                data: {
-                    name: 'Belgium',
-                    countryCode: 'BE',
-                },
-            });
-            console.log('Country "Belgium" added.');
-        } else {
-            console.log('Country "Belgium" already exists.');
-        }
-
+        //
+        // // 1. Add or verify the country "Belgium"
+        // let belgium = await prisma.country.findUnique({
+        //     where: {countryCode: 'BE'},
+        // });
+        //
+        // if (!belgium) {
+        //     belgium = await prisma.country.create({
+        //         data: {
+        //             name: 'Belgium',
+        //             countryCode: 'BE',
+        //         },
+        //     });
+        //     console.log('Country "Belgium" added.');
+        // } else {
+        //     console.log('Country "Belgium" already exists.');
+        // }
+        //
         // // 2. Add or verify the country "France"
         // let france = await prisma.country.findUnique({
         //     where: {countryCode: 'FR'},
@@ -159,7 +160,7 @@ async function seedDatabase() {
         //
         // for (const unit of commonUnits) {
         //     const existingUnit = await prisma.unit.findFirst({
-        //         where: { name: unit.name },
+        //         where: {name: unit.name},
         //     });
         //
         //     if (!existingUnit) {
@@ -173,59 +174,117 @@ async function seedDatabase() {
         // }
         //
         //
-        // 7. Add or verify common item classes
-        const commonItemClasses = [
-            {label: 'Électronique'},    // Electronics
-            {label: 'Mobilier'},        // Furniture
-            {label: 'Vêtements'},       // Clothing
-            {label: 'Alimentation'},    // Food
-            {label: 'Accessoires'},     // Accessories
-            {label: 'Jouets'},          // Toys
-            {label: 'Outils'},          // Tools
-            {label: 'Livres'},          // Books
-        ];
+        // // 7. Add or verify common item classes
+        // const commonItemClasses = [
+        //     {label: 'Électronique'},    // Electronics
+        //     {label: 'Mobilier'},        // Furniture
+        //     {label: 'Vêtements'},       // Clothing
+        //     {label: 'Alimentation'},    // Food
+        //     {label: 'Accessoires'},     // Accessories
+        //     {label: 'Jouets'},          // Toys
+        //     {label: 'Outils'},          // Tools
+        //     {label: 'Livres'},          // Books
+        // ];
+        //
+        // console.log('Inserting common item classes...');
+        //
+        // for (const itemClass of commonItemClasses) {
+        //     const existingItemClass = await prisma.itemClass.findFirst({
+        //         where: {label: itemClass.label},
+        //     });
+        //
+        //     if (!existingItemClass) {
+        //         await prisma.itemClass.create({
+        //             data: itemClass,
+        //         });
+        //         console.log(`Item class "${itemClass.label}" added.`);
+        //     } else {
+        //         console.log(`Item class "${itemClass.label}" already exists.`);
+        //     }
+        // }
+        //
+        // // 8. Add or verify common tax types (Utax)
+        // const commonUtaxes = [
+        //     {label: 'Luxury Tax', utaxType: 'LUXURY'},
+        //     {label: 'Environmental Tax', utaxType: 'SPECIAL'},
+        //     {label: 'Health Tax', utaxType: 'SPECIAL'},
+        // ];
+        //
+        // console.log('Inserting common tax types...');
+        //
+        // for (const utax of commonUtaxes) {
+        //     const existingUtax = await prisma.utax.findFirst({
+        //         where: {label: utax.label},
+        //     });
+        //
+        //     if (!existingUtax) {
+        //         await prisma.utax.create({
+        //             data: utax,
+        //         });
+        //         console.log(`Tax type "${utax.label}" added.`);
+        //     } else {
+        //         console.log(`Tax type "${utax.label}" already exists.`);
+        //     }
+        // }
 
-        console.log('Inserting common item classes...');
+        // Fetch Units, VATs, and Classes for Items
+        const units = await prisma.unit.findMany();
+        const vats = await prisma.vat.findMany();
+        const itemClasses = await prisma.itemClass.findMany();
 
-        for (const itemClass of commonItemClasses) {
-            const existingItemClass = await prisma.itemClass.findFirst({
-                where: {label: itemClass.label},
-            });
-
-            if (!existingItemClass) {
-                await prisma.itemClass.create({
-                    data: itemClass,
-                });
-                console.log(`Item class "${itemClass.label}" added.`);
-            } else {
-                console.log(`Item class "${itemClass.label}" already exists.`);
-            }
+        if (!units.length || !vats.length || !itemClasses.length) {
+            throw new Error('Units, VATs, or Item Classes are missing. Ensure they are seeded before seeding items.');
         }
 
-        // 8. Add or verify common tax types (Utax)
-        const commonUtaxes = [
-            { label: 'Luxury Tax', utaxType: 'LUXURY' },
-            { label: 'Environmental Tax', utaxType: 'SPECIAL' },
-            { label: 'Health Tax', utaxType: 'SPECIAL' },
+        // Mock data for 10 items
+        const items = [
+            // Original 10 items are here
+            // { label: "Sport Shoes", description: "High-quality running shoes.", purchasePrice: 50.0, retailPrice: 80.0, stockQuantity: 100, minQuantity: 10, vatId: vats[0].id, unitId: units[0].id, classId: itemClasses[0].id },
+            // { label: "Office Chair", description: "Ergonomic office chair.", purchasePrice: 150.0, retailPrice: 250.0, stockQuantity: 50, minQuantity: 5, vatId: vats[1].id, unitId: units[1].id, classId: itemClasses[1].id },
+            // { label: "Desk Lamp", description: "Adjustable desk lamp.", purchasePrice: 30.0, retailPrice: 60.0, stockQuantity: 200, minQuantity: 15, vatId: vats[0].id, unitId: units[2].id, classId: itemClasses[2].id },
+            // { label: "Bluetooth Headphones", description: "Noise-cancelling headphones.", purchasePrice: 100.0, retailPrice: 180.0, stockQuantity: 80, minQuantity: 10, vatId: vats[1].id, unitId: units[0].id, classId: itemClasses[0].id },
+            // { label: "Standing Desk", description: "Adjustable standing desk.", purchasePrice: 250.0, retailPrice: 400.0, stockQuantity: 20, minQuantity: 2, vatId: vats[0].id, unitId: units[1].id, classId: itemClasses[1].id },
+            // { label: "Gaming Chair", description: "Comfortable gaming chair.", purchasePrice: 200.0, retailPrice: 350.0, stockQuantity: 40, minQuantity: 5, vatId: vats[1].id, unitId: units[1].id, classId: itemClasses[1].id },
+            // { label: "Monitor 24 inch", description: "Full HD LED monitor.", purchasePrice: 120.0, retailPrice: 220.0, stockQuantity: 60, minQuantity: 8, vatId: vats[0].id, unitId: units[0].id, classId: itemClasses[2].id },
+            // { label: "Keyboard", description: "Mechanical keyboard.", purchasePrice: 80.0, retailPrice: 150.0, stockQuantity: 90, minQuantity: 10, vatId: vats[1].id, unitId: units[1].id, classId: itemClasses[0].id },
+            // { label: "Wireless Mouse", description: "Ergonomic wireless mouse.", purchasePrice: 40.0, retailPrice: 70.0, stockQuantity: 150, minQuantity: 20, vatId: vats[0].id, unitId: units[2].id, classId: itemClasses[0].id },
+            // { label: "Printer", description: "All-in-one wireless printer.", purchasePrice: 180.0, retailPrice: 300.0, stockQuantity: 30, minQuantity: 3, vatId: vats[1].id, unitId: units[0].id, classId: itemClasses[2].id },
+
+            // New 10 items
+            { label: "Smartwatch", description: "Waterproof smartwatch with GPS.", purchasePrice: 120.0, retailPrice: 250.0, stockQuantity: 70, minQuantity: 10, vatId: vats[0].id, unitId: units[0].id, classId: itemClasses[0].id },
+            { label: "Electric Kettle", description: "1.5L electric kettle with auto shut-off.", purchasePrice: 25.0, retailPrice: 50.0, stockQuantity: 200, minQuantity: 30, vatId: vats[1].id, unitId: units[2].id, classId: itemClasses[2].id },
+            { label: "Gaming Laptop", description: "High-performance laptop for gaming.", purchasePrice: 1000.0, retailPrice: 1500.0, stockQuantity: 15, minQuantity: 1, vatId: vats[0].id, unitId: units[1].id, classId: itemClasses[0].id },
+            { label: "Electric Scooter", description: "Foldable electric scooter with long battery life.", purchasePrice: 400.0, retailPrice: 600.0, stockQuantity: 20, minQuantity: 2, vatId: vats[1].id, unitId: units[1].id, classId: itemClasses[1].id },
+            { label: "Air Conditioner", description: "Energy-efficient air conditioner.", purchasePrice: 500.0, retailPrice: 800.0, stockQuantity: 10, minQuantity: 1, vatId: vats[1].id, unitId: units[2].id, classId: itemClasses[1].id },
+            { label: "Microwave Oven", description: "Compact microwave oven with grill function.", purchasePrice: 100.0, retailPrice: 180.0, stockQuantity: 50, minQuantity: 5, vatId: vats[0].id, unitId: units[1].id, classId: itemClasses[2].id },
+            { label: "Power Bank", description: "20,000mAh portable power bank.", purchasePrice: 20.0, retailPrice: 50.0, stockQuantity: 300, minQuantity: 50, vatId: vats[0].id, unitId: units[2].id, classId: itemClasses[0].id },
+            { label: "Webcam", description: "1080p HD webcam with microphone.", purchasePrice: 30.0, retailPrice: 60.0, stockQuantity: 120, minQuantity: 10, vatId: vats[1].id, unitId: units[1].id, classId: itemClasses[0].id },
+            { label: "Fitness Tracker", description: "Track steps, calories, and sleep patterns.", purchasePrice: 60.0, retailPrice: 100.0, stockQuantity: 80, minQuantity: 8, vatId: vats[0].id, unitId: units[0].id, classId: itemClasses[0].id },
+            { label: "Coffee Maker", description: "Automatic coffee maker with timer.", purchasePrice: 70.0, retailPrice: 150.0, stockQuantity: 100, minQuantity: 10, vatId: vats[1].id, unitId: units[2].id, classId: itemClasses[2].id },
         ];
 
-        console.log('Inserting common tax types...');
 
-        for (const utax of commonUtaxes) {
-            const existingUtax = await prisma.utax.findFirst({
-                where: { label: utax.label },
+        console.log('Seeding items...');
+
+        for (const item of items) {
+            const itemNumber = await generateItemNumber();
+
+            const existingItem = await prisma.item.findFirst({
+                where: { itemNumber },
             });
 
-            if (!existingUtax) {
-                await prisma.utax.create({
-                    data: utax,
+            if (!existingItem) {
+                await prisma.item.create({
+                    data: {
+                        itemNumber,
+                        ...item,
+                    },
                 });
-                console.log(`Tax type "${utax.label}" added.`);
+                console.log(`Item "${item.label}" added with number ${itemNumber}.`);
             } else {
-                console.log(`Tax type "${utax.label}" already exists.`);
+                console.log(`Item "${item.label}" already exists.`);
             }
         }
-
 
         console.log('Database seeding completed successfully.');
     } catch (error) {
@@ -233,6 +292,33 @@ async function seedDatabase() {
     } finally {
         await prisma.$disconnect();
     }
+}
+async function generateItemNumber() {
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+
+    const lastItem = await prisma.item.findFirst({
+        where: {
+            itemNumber: {
+                startsWith: `ITM${year}${month}`,
+            },
+        },
+        orderBy: {
+            itemNumber: 'desc',
+        },
+    });
+
+    let sequenceNumber;
+
+    if (!lastItem) {
+        sequenceNumber = 1;
+    } else {
+        const lastSequence = parseInt(lastItem.itemNumber.slice(-6), 10);
+        sequenceNumber = lastSequence + 1;
+    }
+
+    return `ITM${year}${month}${sequenceNumber.toString().padStart(6, '0')}`;
 }
 
 seedDatabase();

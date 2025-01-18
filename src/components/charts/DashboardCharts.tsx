@@ -1,10 +1,10 @@
 // path: src/components/charts/DashboardCharts.tsx
 
 'use client';
-import React, { useEffect, useState } from 'react';
-import { RevenueChart } from './RevenueChart';
-import { CustomerGrowthChart } from './CustomerGrowthChart';
-import { TotalInvoicesChart } from './TotalInvoicesChart';
+import React, {useEffect, useState} from 'react';
+import {RevenueChart} from './RevenueChart';
+import {CustomerGrowthChart} from './CustomerGrowthChart';
+import {TotalInvoicesChart} from './TotalInvoicesChart';
 
 // Define the type for daily data
 interface DailyData {
@@ -18,9 +18,15 @@ interface DailyData {
 const DashboardCharts = () => {
     const [dailyData, setDailyData] = useState<DailyData | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isClient, setIsClient] = useState(false);
+
+    // useEffect(() => {
+    //     setIsClient(true);
+    // }, []);
 
     useEffect(() => {
         const fetchData = async () => {
+            setIsClient(true);
             try {
                 const response = await fetch('/api/v1/dashboard/monthly-summary');
                 if (!response.ok) {
@@ -37,6 +43,7 @@ const DashboardCharts = () => {
         fetchData();
     }, []);
 
+    if (!isClient) return null; // Avoid rendering during SSR
     if (error) {
         return <div className="text-red-500 font-bold">Error: {error}</div>;
     }
@@ -58,9 +65,9 @@ const DashboardCharts = () => {
         <div className="w-full  ">
             <h2 className="text-2xl font-bold mb-6">Dashboard Overview</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <TotalInvoicesChart data={chartData} />
-                <RevenueChart data={chartData} />
-                <CustomerGrowthChart data={chartData} />
+                <TotalInvoicesChart data={chartData}/>
+                <RevenueChart data={chartData}/>
+                <CustomerGrowthChart data={chartData}/>
             </div>
         </div>
     );

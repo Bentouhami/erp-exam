@@ -21,10 +21,16 @@ const Sidebar = () => {
     const menuItems = [
         {name: 'Dashboard', icon: Home, path: '/dashboard'},
         {name: 'Invoices', icon: FileText, path: '/dashboard/invoices'},
-        {name: 'users', icon: Users, path: '/dashboard/users'},
+        {name: 'Users', icon: Users, path: '/dashboard/users'},
         {name: 'Items', icon: Package, path: '/dashboard/items'},
-        {name: 'Paramètres', icon: Settings, path: '/dashboard/settings'},
+        {name: 'Settings', icon: Settings, path: '/dashboard/settings'},
     ];
+    // Filter menu items based on the user's role
+    const filteredMenuItems =
+        session?.user?.role === 'ACCOUNTANT'
+            ? menuItems.filter((item) => !['Users', 'Items', 'Settings'].includes(item.name)) // Hide "Users" and "Items"
+            // for accountants
+            : menuItems;
 
     if (!mounted) return null;
 
@@ -173,7 +179,7 @@ const Sidebar = () => {
                 {/* Navigation */}
                 <nav className="flex-1 p-4">
                     <ul className="space-y-2">
-                        {menuItems.map((item) => {
+                        {filteredMenuItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.path;
                             return (
