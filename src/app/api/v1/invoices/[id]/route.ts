@@ -1,8 +1,7 @@
 // Path: src/app/api/v1/invoices/[id]/route.ts
 
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
-
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db';
 
 /**
  * Fetch invoice by id with user and invoice details included
@@ -10,7 +9,7 @@ import prisma from '@/lib/db'
  * @param params
  * @constructor
  */
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
     try {
         const invoice = await prisma.invoice.findUnique({
             where: { id: parseInt(params.id) },
@@ -18,22 +17,24 @@ export async function GET(request: Request, { params }: { params: { id: string }
                 User: true,
                 invoiceDetails: {
                     include: {
-                        item: true,
+                        item: {
+                            include: {
+                                vat: true, // Include VAT details
+                            },
+                        },
                     },
                 },
             },
-
-        })
+        });
 
         if (!invoice) {
-            return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+            return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
         }
 
-
-        return NextResponse.json(invoice)
+        return NextResponse.json(invoice);
     } catch (error) {
-        console.error('Error fetching invoice:', error)
-        return NextResponse.json({ error: 'Failed to fetch invoice' }, { status: 500 })
+        console.error('Error fetching invoice:', error);
+        return NextResponse.json({ error: 'Failed to fetch invoice' }, { status: 500 });
     }
 }
 
@@ -43,57 +44,79 @@ export async function GET(request: Request, { params }: { params: { id: string }
  * @param params
  * @constructor
  */
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-
-    if (request.method !== 'PUT') {
-        return NextResponse.json({ error: 'Invalid method' }, { status: 405 })
-    }
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const body = await request.json()
-        const { userId, items, ...invoiceData } = body
+        const body = await request.json();
+        const { userId, items, ...invoiceData } = body;
 
-        // logs to debug
-        console.log('userId in PUT path:src/app/api/v1/invoices/[id]/route.ts', userId)
-        console.log('items in PUT path: src/app/api/v1/invoices/[id]/route.ts', items)
-        console.log('invoiceData in PUT path: src/app/api/v1/invoices/[id]/route.ts', invoiceData)
+        console.log('userId in PUT:', userId);
+        console.log('items in PUT:', items);
+        console.log('invoiceData in PUT:', invoiceData);
 
+        // Validate and fetch items
+        const itemDetails = await prisma.item.findMany({
+            where: {
+                id: { in: items.map((item: any) => parseInt(item.itemId)) },
+                itemStatus: 'ACTIVE',
+            },
+            include: {
+                vat: true, // Include VAT details
+            },
+        });
 
+        if (itemDetails.length !== items.length) {
+            return NextResponse.json({ error: 'Some items are inactive or not found' }, { status: 400 });
+        }
+
+        // Update invoice and recreate invoice details
         const invoice = await prisma.invoice.update({
             where: { id: parseInt(params.id) },
             data: {
                 ...invoiceData,
                 User: { connect: { id: userId } },
                 invoiceDetails: {
-                    deleteMany: {},
-                    create: items.map((item: any) => ({
-                        item: { connect: { id: parseInt(item.itemId) } },
-                        quantity: item.quantity,
-                        discount: item.discount,
-                    })),
+                    deleteMany: {}, // Remove existing invoice details
+                    create: items.map((item: any, index: number) => {
+                        const itemDetail = itemDetails.find((i) => i.id === parseInt(item.itemId));
+                        if (!itemDetail) throw new Error('Item not found');
+                        return {
+                            item: { connect: { id: itemDetail.id } },
+                            quantity: item.quantity,
+                            discount: item.discount,
+                            lineNumber: index + 1,
+                        };
+                    }),
                 },
             },
             include: {
                 User: true,
                 invoiceDetails: {
                     include: {
-                        item: true,
+                        item: {
+                            include: {
+                                vat: true, // Include VAT details for calculations
+                            },
+                        },
                     },
                 },
             },
-        })
+        });
 
         // Calculate totals
-        let totalAmount = 0
-        let totalVatAmount = 0
+        let totalAmount = 0;
+        let totalVatAmount = 0;
 
         invoice.invoiceDetails.forEach((detail) => {
-            const itemTotal = (detail.item.retailPrice.toNumber() * detail.quantity * (1 - detail.discount.toNumber() / 100))
-            totalAmount += itemTotal
-            totalVatAmount += itemTotal * (detail.item.vatType === 'REDUCED' ? 0.06 : 0.21)
-        })
+            const unitPrice = detail.item.retailPrice.toNumber();
+            const vatRate = detail.item.vat.vatPercent.toNumber() / 100;
+            const itemTotal = unitPrice * detail.quantity * (1 - detail.discount.toNumber() / 100);
+            totalAmount += itemTotal;
+            totalVatAmount += itemTotal * vatRate;
+        });
 
-        const totalTtcAmount = totalAmount + totalVatAmount
+        const totalTtcAmount = totalAmount + totalVatAmount;
 
+        // Update totals in the invoice
         const updatedInvoice = await prisma.invoice.update({
             where: { id: invoice.id },
             data: {
@@ -101,25 +124,30 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                 totalVatAmount,
                 totalTtcAmount,
             },
-        })
+        });
 
-        return NextResponse.json(updatedInvoice)
+        return NextResponse.json(updatedInvoice);
     } catch (error) {
-        console.error('Error updating invoice:', error)
-        return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
+        console.error('Error updating invoice:', error);
+        return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 });
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+/**
+ * Delete invoice by id
+ * @param request
+ * @param params
+ * @constructor
+ */
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
     try {
         await prisma.invoice.delete({
             where: { id: parseInt(params.id) },
-        })
+        });
 
-        return NextResponse.json({ message: 'Invoice deleted successfully' })
+        return NextResponse.json({ message: 'Invoice deleted successfully' });
     } catch (error) {
-        console.error('Error deleting invoice:', error)
-        return NextResponse.json({ error: 'Failed to delete invoice' }, { status: 500 })
+        console.error('Error deleting invoice:', error);
+        return NextResponse.json({ error: 'Failed to delete invoice' }, { status: 500 });
     }
 }
-

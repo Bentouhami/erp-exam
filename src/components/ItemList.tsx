@@ -1,17 +1,22 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowUpDown, MoreHorizontal, Plus } from 'lucide-react';
-import { toast } from 'react-toastify';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {ArrowUpDown, MoreHorizontal, Plus} from 'lucide-react';
+import {toast, ToastContainer} from 'react-toastify';
 import axios from 'axios';
-import { API_DOMAIN, DOMAIN } from '@/lib/utils/constants';
 import RequireAuth from '@/components/auth/RequireAuth';
-import { ListSkeleton } from '@/components/skeletons/ListSkeleton';
+import {ListSkeleton} from '@/components/skeletons/ListSkeleton';
+import {useRouter} from "next/navigation";
+import {useEffect, useState} from "react";
+import {API_DOMAIN} from "@/lib/utils/constants";
 
 type Item = {
     id: number;
@@ -49,8 +54,8 @@ export default function ItemList() {
     const [selectedVat, setSelectedVat] = useState<string>('');
     const [selectedUnit, setSelectedUnit] = useState<string>('');
     const [selectedClass, setSelectedClass] = useState<string>('');
-    const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
-    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'itemNumber', direction: 'asc' });
+    const [priceRange, setPriceRange] = useState({min: 0, max: 1000});
+    const [sortConfig, setSortConfig] = useState<SortConfig>({key: 'itemNumber', direction: 'asc'});
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [loading, setLoading] = useState(true);
@@ -74,12 +79,15 @@ export default function ItemList() {
             setItems(response.data);
             setFilteredItems(response.data);
         } catch (error) {
-            console.error('Error fetching items:', error);
-            toast.error('Failed to fetch items');
+            if (typeof window !== 'undefined') {
+                console.error('Error fetching items:', error);
+                toast.error('Failed to fetch items');
+            }
         } finally {
             setLoading(false);
         }
     };
+
 
     const applyFilters = () => {
         let filtered = [...items];
@@ -116,7 +124,7 @@ export default function ItemList() {
 
         // Apply sorting
         filtered = filtered.sort((a, b) => {
-            const { key, direction } = sortConfig;
+            const {key, direction} = sortConfig;
             if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
             if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
             return 0;
@@ -130,7 +138,7 @@ export default function ItemList() {
         if (sortConfig.key === key && sortConfig.direction === 'asc') {
             direction = 'desc';
         }
-        setSortConfig({ key, direction });
+        setSortConfig({key, direction});
     };
 
     const paginatedItems = filteredItems.slice(
@@ -139,17 +147,17 @@ export default function ItemList() {
     );
 
     const handleAddItem = () => {
-        router.push(`${DOMAIN}/dashboard/items/new`);
+        router.push(`/dashboard/items/new`);
     };
 
     const handleEditItem = (itemId: number) => {
-        router.push(`${DOMAIN}/dashboard/items/${itemId}/edit`);
+        router.push(`/dashboard/items/${itemId}/edit`);
     };
 
     const handleDeleteItem = async (itemId: number) => {
-        if (window.confirm('Are you sure you want to delete this item?')) {
+        {
             try {
-                const response = await axios.delete(`${API_DOMAIN}/items/${itemId}`);
+                const response = await axios.delete(`api/v1/items/${itemId}`);
                 if (response.status !== 200 || !response.data) {
                     throw new Error('Failed to delete item');
                 }
@@ -168,7 +176,7 @@ export default function ItemList() {
     const uniqueClasses = Array.from(new Map(items.map((item) => [item.itemClass.id, item.itemClass])).values());
 
     if (loading) {
-        return <ListSkeleton />;
+        return <ListSkeleton/>;
     }
 
     return (
@@ -228,7 +236,7 @@ export default function ItemList() {
 
                     {/* Add Item Button */}
                     <Button onClick={handleAddItem}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Item
+                        <Plus className="mr-2 h-4 w-4"/> Add Item
                     </Button>
                 </div>
 
@@ -238,13 +246,13 @@ export default function ItemList() {
                         type="number"
                         placeholder="Min Price"
                         value={priceRange.min}
-                        onChange={(e) => setPriceRange({ ...priceRange, min: Number(e.target.value) })}
+                        onChange={(e) => setPriceRange({...priceRange, min: Number(e.target.value)})}
                     />
                     <Input
                         type="number"
                         placeholder="Max Price"
                         value={priceRange.max}
-                        onChange={(e) => setPriceRange({ ...priceRange, max: Number(e.target.value) })}
+                        onChange={(e) => setPriceRange({...priceRange, max: Number(e.target.value)})}
                     />
                 </div>
 
@@ -255,7 +263,7 @@ export default function ItemList() {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('itemNumber')}>
                                     Item Number
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                             <TableHead>Label</TableHead>
@@ -290,7 +298,7 @@ export default function ItemList() {
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" className="h-8 w-8 p-0">
                                                 <span className="sr-only">Open menu</span>
-                                                <MoreHorizontal className="h-4 w-4" />
+                                                <MoreHorizontal className="h-4 w-4"/>
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
@@ -298,7 +306,7 @@ export default function ItemList() {
                                             <DropdownMenuItem onClick={() => handleEditItem(item.id)}>
                                                 Edit
                                             </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
+                                            <DropdownMenuSeparator/>
                                             <DropdownMenuItem onClick={() => handleDeleteItem(item.id)}>
                                                 Delete
                                             </DropdownMenuItem>
@@ -329,6 +337,7 @@ export default function ItemList() {
                     </Button>
                 </div>
             </div>
+            <ToastContainer position="bottom-right" autoClose={5000} hideProgressBar theme="colored"/>
         </RequireAuth>
     );
 }

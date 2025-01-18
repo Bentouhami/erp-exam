@@ -1,4 +1,4 @@
-// path:
+// path: src/lib/utils/accessControlHelper.ts
 
 
 import {Session} from "next-auth";
