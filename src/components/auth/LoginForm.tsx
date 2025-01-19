@@ -24,13 +24,10 @@ export function LoginForm() {
             password,
         });
 
-        
         if (result?.error) {
             setError("Invalid email or password");
         } else {
-            console.log("result", result);
-
-            // Redirect to dashboard on successful login
+            console.log("Login successful, lastLogin updated");
             router.push("/dashboard");
         }
     };

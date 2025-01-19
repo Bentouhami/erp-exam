@@ -8,13 +8,15 @@ import * as z from 'zod'
 import {Button} from "@/components/ui/button"
 import {Input} from "@/components/ui/input"
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form"
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table"
+import {Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "@/components/ui/table"
 import {toast} from 'react-toastify'
 import axios from "axios";
 import {API_DOMAIN, DOMAIN} from "@/lib/utils/constants";
 import CustomerSelect from "@/components/customers/CustomerSelect";
 import {Delete, Plus, Save} from "lucide-react";
 import ItemSelect from "@/components/item-form/ItemSelect";
+import { Card } from '@/components/ui/card'
+import InvoiceTotals from "@/components/invoices/InvoiceTotals";
 
 const invoiceSchema = z.object({
     invoiceNumber: z.string(),
@@ -201,6 +203,13 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
         setTotalTTC(parseFloat((ht + vat).toFixed(2)));
 
         console.log('Calculated Totals:', { ht, vat, ttc: ht + vat });
+    };
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'EUR',
+        }).format(amount);
     };
 
     const onSubmit = async (data: InvoiceFormData) => {
@@ -417,11 +426,8 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                 </div>
 
                 {/* Totals Section */}
-                <div>
-                    <div>Total HT: {totalHT.toFixed(2)} €</div>
-                    <div>Total VAT: {totalVAT.toFixed(2)} €</div>
-                    <div>Total TTC: {totalTTC.toFixed(2)} €</div>
-                </div>
+                <InvoiceTotals totalHT={ formatCurrency(totalHT) } totalVAT={ formatCurrency(totalVAT) } totalTTC={ formatCurrency(totalTTC) } />
+
 
                 <Button type="submit">
                     <Save className="mr-2 h-4 w-4"/> Save Invoice

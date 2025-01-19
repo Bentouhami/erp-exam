@@ -494,7 +494,9 @@ async function seedDatabase() {
         });
 
         if (!existingSuperAdmin) {
+            const userNumber = await generateUniqueUserNumber("SUPER_ADMIN"); // Generate user number for SUPER_ADMIN
             const superAdminData = {
+                userNumber, // Include the generated user number
                 firstName: "Bentouhami",
                 lastName: "Faisal",
                 name: "Bentouhami Faisal",
@@ -516,7 +518,7 @@ async function seedDatabase() {
                 data: superAdminData,
             });
 
-            console.log(`Super Admin user "${superAdminEmail}" created successfully.`);
+            console.log(`Super Admin user "${superAdminEmail}" created successfully with user number ${userNumber}.`);
         } else {
             console.log(`Super Admin user "${superAdminEmail}" already exists.`);
         }
@@ -570,6 +572,46 @@ async function saltAndHashPassword(password) {
             });
         });
     });
+}
+
+async function generateUniqueUserNumber(userRole) {
+
+    let userPrefix = ""; // Prefix for user numbers
+    if (userRole === "ADMIN") {
+        userPrefix = "ADM";
+    } else if (userRole === "CUSTOMER") {
+        userPrefix = "CUS";
+    } else if (userRole === "SUPER_ADMIN") {
+        userPrefix = "SAD";
+    } else if (userRole === "ACCOUNTANT") {
+        userPrefix = "ACC";
+    }
+
+    const paddingLength = 6; // Length of the number portion (e.g., U000001)
+
+    // Find the latest user based on userNumber
+    const latestUser = await prisma.user.findFirst({
+        where: {
+            userNumber: {
+                startsWith: userPrefix,
+            },
+        },
+        orderBy: {
+            userNumber: "desc",
+        },
+    });
+
+    let nextNumber = 1; // Default to 1 if no users exist
+
+    if (latestUser && latestUser.userNumber) {
+        // Extract the numeric part from the latest userNumber
+        const latestNumber = parseInt(latestUser.userNumber.slice(userPrefix.length), 10);
+        nextNumber = latestNumber + 1;
+    }
+
+    // Generate the new userNumber with zero-padded numeric part
+    const userNumber = `${userPrefix}${nextNumber.toString().padStart(paddingLength, "0")}`;
+    return userNumber;
 }
 
 seedDatabase();

@@ -13,7 +13,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { ArrowUpDown, MoreHorizontal, Plus } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus } from 'lucide-react'
 import { toast } from 'react-toastify'
 import axios from "axios"
 import { API_DOMAIN, DOMAIN } from "@/lib/utils/constants"
@@ -42,18 +42,15 @@ type SortConfig = {
     direction: 'asc' | 'desc'
 }
 
-/**
- * Invoice list component to display a list of invoices in a table
- * @constructor
- */
 export default function InvoiceList() {
     const [invoices, setInvoices] = useState<Invoice[]>([])
     const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([])
     const [searchTerm, setSearchTerm] = useState('')
+    const [filterStatus, setFilterStatus] = useState<'all' | 'accounted' | 'not_accounted'>('all')
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'invoiceNumber', direction: 'asc' })
     const [loading, setLoading] = useState(true)
     const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage] = useState(10) // Adjust this value as needed
+    const [itemsPerPage] = useState(10)
     const router = useRouter()
 
     useEffect(() => {
@@ -61,14 +58,21 @@ export default function InvoiceList() {
     }, [])
 
     useEffect(() => {
-        const filtered = invoices.filter(invoice =>
+        let filtered = invoices.filter(invoice =>
             invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
             invoice.User.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             invoice.User.userNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
             new Date(invoice.issuedAt).toLocaleDateString().includes(searchTerm)
         )
+
+        if (filterStatus === 'accounted') {
+            filtered = filtered.filter(invoice => invoice.flag_accounting)
+        } else if (filterStatus === 'not_accounted') {
+            filtered = filtered.filter(invoice => !invoice.flag_accounting)
+        }
+
         setFilteredInvoices(filtered)
-    }, [searchTerm, invoices])
+    }, [searchTerm, invoices, filterStatus])
 
     const indexOfLastInvoice = currentPage * itemsPerPage
     const indexOfFirstInvoice = indexOfLastInvoice - itemsPerPage
@@ -148,7 +152,7 @@ export default function InvoiceList() {
                 throw new Error('Failed to update accounting status')
             }
             toast.success('Invoice accounting status updated successfully')
-            fetchInvoices() // Refresh the list from the server
+            fetchInvoices()
         } catch (error) {
             console.error('Error updating accounting status:', error)
             toast.error('Failed to update accounting status')
@@ -174,6 +178,18 @@ export default function InvoiceList() {
                         <Plus className="mr-2 h-4 w-4" /> Add Invoice
                     </Button>
                 </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline">
+                            Filter by Status <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => setFilterStatus('all')}>All</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setFilterStatus('accounted')}>Accounted</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setFilterStatus('not_accounted')}>Not Accounted</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>

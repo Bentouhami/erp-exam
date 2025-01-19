@@ -88,31 +88,32 @@ model User {
   sessions      Session[]
   Authenticator Authenticator[]
 
-  userNumber      String? @unique
-  firstName       String  @db.Text
-  lastName        String  @db.Text
+  userNumber      String?   @unique
+  firstName       String    @db.Text
+  lastName        String    @db.Text
   password        String?
-  companyName     String? @db.Text
-  isEnterprise    Boolean @default(false) // True for enterprises, false for individuals
-  vatNumber       String? @unique // Only enterprises will have this field
-  companyNumber   String? @unique @db.Text
-  exportNumber    String? @unique @db.Text
-  isEnabled       Boolean @default(true)
-  isVerified      Boolean @default(false)
-  phone           String? @unique @db.Text
-  mobile          String? @unique @db.Text
-  fax             String? @unique
-  additionalInfo  String? @db.Text
-  paymentTermDays Int     @default(0) // Délai de paiement en jours (0 = paiement immédiat)
-  role            Role    @default(CUSTOMER)
+  companyName     String?   @db.Text
+  isEnterprise    Boolean   @default(false) // True for enterprises, false for individuals
+  vatNumber       String?   @unique // Only enterprises will have this field
+  companyNumber   String?   @unique @db.Text
+  exportNumber    String?   @unique @db.Text
+  isEnabled       Boolean   @default(true)
+  isVerified      Boolean   @default(false)
+  phone           String?   @unique @db.Text
+  mobile          String?   @unique @db.Text
+  fax             String?   @unique
+  additionalInfo  String?   @db.Text
+  paymentTermDays Int       @default(0) // delay of payment in days (0 = immediate payment)
+  role            Role      @default(CUSTOMER)
+  lastLogin       DateTime? // last login date
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  payments       Payment[] // Liste des paiements effectués par le client
-  stockMovements StockMovement[] // Historique des mouvements de stock liés au client
-  invoiceDetails InvoiceDetail[] // Détails des factures associées au client
+  payments       Payment[] // List of payments made by the customer
+  stockMovements StockMovement[] // History of stock movements related to the customer
+  invoiceDetails InvoiceDetail[] // Details of invoices associated with the customer
 
   UserAddress           UserAddress[]
   UserVerificationToken UserVerificationToken[]

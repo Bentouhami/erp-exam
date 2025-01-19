@@ -1,8 +1,8 @@
 // src/app/api/v1/users/role/[role]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import {NextRequest, NextResponse} from 'next/server';
 import prisma from '@/lib/db';
 
-export async function GET(req: NextRequest, { params }: { params: { role: string } }) {
+export async function GET(req: NextRequest, {params}: { params: { role: string } }) {
     try {
         const userRole = params.role; // Extract the role from the URL
 
@@ -13,13 +13,13 @@ export async function GET(req: NextRequest, { params }: { params: { role: string
                 whereClause = {}; // SUPER_ADMIN sees all users
                 break;
             case 'ADMIN':
-                whereClause = { NOT: { role: 'SUPER_ADMIN' } }; // ADMIN cannot see SUPER_ADMIN
+                whereClause = {NOT: {role: 'SUPER_ADMIN'}}; // ADMIN cannot see SUPER_ADMIN
                 break;
             case 'ACCOUNTANT':
-                whereClause = { role: 'CUSTOMER' }; // ACCOUNTANT sees only customers
+                whereClause = {role: 'CUSTOMER'}; // ACCOUNTANT sees only customers
                 break;
             default:
-                return NextResponse.json({ error: 'Invalid role' }, { status: 403 });
+                return NextResponse.json({error: 'Invalid role'}, {status: 403});
         }
 
         const users = await prisma.user.findMany({
@@ -34,22 +34,32 @@ export async function GET(req: NextRequest, { params }: { params: { role: string
                 isEnabled: true,
                 isVerified: true,
                 isEnterprise: true,
+                phone: true,
+                vatNumber: true,
+                companyName: true,
+                companyNumber: true,
+                exportNumber: true,
+                lastLogin: true,
                 createdAt: true,
             },
             orderBy: {
                 createdAt: 'desc',
             },
         });
-        //
-        // users.forEach(user => {
-        //     user.email = decrypt(user.email);
-        //     user.firstName = decrypt(user.firstName);
-        //     user.lastName = decrypt(user.lastName);
-        // });
 
-        return NextResponse.json(users);
+        // Ensure no null values are returned
+        const sanitizedUsers = users.map(user => ({
+            ...user,
+            userNumber: user.userNumber || '',
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.email || '',
+            role: user.role || '',
+        }));
+
+        return NextResponse.json(sanitizedUsers);
     } catch (error) {
         console.error('Error fetching users:', error);
-        return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+        return NextResponse.json({error: 'Failed to fetch users'}, {status: 500});
     }
 }
