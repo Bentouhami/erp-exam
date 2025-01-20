@@ -6,7 +6,13 @@ import prisma from '@/lib/db';
 /**
  * GET a single item by ID
  */
+
 export async function GET(request: NextRequest, {params}: { params: { id: string } }) {
+
+    if (request.method !== 'GET') {
+        return new Response('Method not allowed', {status: 405});
+    }
+
     try {
         const item = await prisma.item.findUnique({
             where: {id: parseInt(params.id)},
@@ -30,11 +36,25 @@ export async function GET(request: NextRequest, {params}: { params: { id: string
 }
 
 /**
- * PUT to update an existing item by ID
+ * @Route /api/v1/items/:id
+ * @Description Update an item
+ * @Param id - The ID of the item to update
+ * @Body - The updated item data
+ * @Success 200 - Successfully updated the item
+ * @Failure 404 - Item not found
+ * @param request type NextRequest
+ * @param params type { params: { id: string } }
+ * @returns NextResponse
  */
 export async function PUT(request: NextRequest, {params}: { params: { id: string } }) {
+    if (request.method !== 'PUT') {
+        return new Response('Method not allowed', {status: 405});
+    }
+
     try {
         const body = await request.json();
+
+        console.log('received data from PUT request in path src/app/api/v1/items/[id]/route.ts:', body);
 
         const updatedItem = await prisma.item.update({
             where: {id: parseInt(params.id)},
@@ -44,9 +64,9 @@ export async function PUT(request: NextRequest, {params}: { params: { id: string
                 description: body.description,
                 retailPrice: body.retailPrice,
                 purchasePrice: body.purchasePrice,
-                vat: {connect: {id: body.vatId}}, // Connect to the appropriate VAT
-                unit: {connect: {id: body.unitId}},
-                itemClass: {connect: {id: body.classId}},
+                vat: {connect: {id: parseInt(body.vatId)}}, // Convert to integer
+                unit: {connect: {id: parseInt(body.unitId)}}, // Convert to integer
+                itemClass: {connect: {id: parseInt(body.classId)}}, // Convert to integer
                 itemTaxes: {
                     deleteMany: {}, // Clear existing item taxes
                     create: body.itemTaxes.map((taxId: number) => ({

@@ -1,56 +1,62 @@
 // path: src/components/item-form/ItemDetailsSection.tsx
+
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from "@/components/ui/input";
 import { Control } from 'react-hook-form';
-import {Input} from "@/components/ui/input";
 
 interface ItemDetailsSectionProps {
     control: Control<any>;
+    showItemNumber: boolean;
 }
 
-export default function ItemDetailsSection({ control }: ItemDetailsSectionProps) {
+export default function ItemDetailsSection({ control, showItemNumber }: ItemDetailsSectionProps) {
     return (
-        <>
-            <FormField
-                control={control}
-                name="itemNumber"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Item Number</FormLabel>
-                        <FormControl>
-                            <Input {...field} disabled={true} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
+        <div className="space-y-4">
+            {showItemNumber && (
+                <FormField
+                    control={control}
+                    name="itemNumber"
+                    render={({field}) => (
+                        <FormItem>
+                            <FormLabel>Item Number</FormLabel>
+                            <FormControl>
+                                <Input disabled {...field} />
+                            </FormControl>
+                            <FormMessage/>
+                        </FormItem>
+                    )}
+                />
+            )}
+
             <FormField
                 control={control}
                 name="label"
-                render={({ field }) => (
+                render={({field}) => (
                     <FormItem>
                         <FormLabel>Label</FormLabel>
                         <FormControl>
                             <Input {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage/>
                     </FormItem>
                 )}
             />
+
             <FormField
                 control={control}
                 name="description"
-                render={({ field }) => (
+                render={({field}) => (
                     <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
                             <Textarea {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage/>
                     </FormItem>
                 )}
             />
-        </>
+        </div>
     );
 }
