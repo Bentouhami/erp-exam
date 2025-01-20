@@ -108,14 +108,34 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
     useEffect(() => {
         fetchUsersAndItems();
     }, []);
-
     useEffect(() => {
-        if (invoiceId) {
-            fetchInvoice(invoiceId);
-        } else {
-            generateInvoiceNumber();
-        }
-    }, [invoiceId]);
+        const fetchInvoiceOrGenerateNumber = async () => {
+            if (invoiceId) {
+                // Fetch an existing invoice
+                try {
+                    await fetchInvoice(invoiceId);
+                } catch (error) {
+                    console.error('Error fetching invoice:', error);
+                    toast.error('Failed to fetch invoice');
+                }
+            } else {
+                // Generate a new invoice number
+                try {
+                    const response = await fetch(`${API_DOMAIN}/invoices/generate-number`);
+                    if (!response.ok) {
+                        throw new Error('Failed to generate invoice number');
+                    }
+                    const { invoiceNumber } = await response.json();
+                    form.setValue('invoiceNumber', invoiceNumber);
+                } catch (error) {
+                    console.error('Error generating invoice number:', error);
+                    toast.error('Failed to generate invoice number');
+                }
+            }
+        };
+
+        fetchInvoiceOrGenerateNumber();
+    }, [invoiceId, form]);
 
     const fetchUsersAndItems = async () => {
         try {
@@ -159,19 +179,19 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
         }
     };
 
-    const generateInvoiceNumber = async () => {
-        try {
-            const response = await fetch(`${API_DOMAIN}/invoices/generate-number`);
-            if (!response.ok) {
-                throw new Error('Failed to generate invoice number');
-            }
-            const {invoiceNumber} = await response.json();
-            form.setValue('invoiceNumber', invoiceNumber);
-        } catch (error) {
-            console.error('Error generating invoice number:', error);
-            toast.error('Failed to generate invoice number');
-        }
-    };
+    // const generateInvoiceNumber = async () => {
+    //     try {
+    //         const response = await fetch(`${API_DOMAIN}/invoices/generate-number`);
+    //         if (!response.ok) {
+    //             throw new Error('Failed to generate invoice number');
+    //         }
+    //         const {invoiceNumber} = await response.json();
+    //         form.setValue('invoiceNumber', invoiceNumber);
+    //     } catch (error) {
+    //         console.error('Error generating invoice number:', error);
+    //         toast.error('Failed to generate invoice number');
+    //     }
+    // };
 
     const calculateDueDate = (userId: string) => {
         const user = users.find(u => u.id === userId);
@@ -183,6 +203,7 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
             form.setValue('dueDate', dueDate.toISOString().split('T')[0]);
         }
     };
+
     const calculateTotals = () => {
         const selectedItems = form.getValues('items');
         let ht = 0;
