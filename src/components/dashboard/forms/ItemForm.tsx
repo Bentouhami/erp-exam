@@ -102,9 +102,6 @@ export default function ItemForm({ itemId }: ItemFormProps) {
         }
     };
 
-
-
-
     const fetchItem = async (id: number) => {
         try {
             const response = await fetch(`${API_DOMAIN}/items/${id}`);
@@ -130,6 +127,9 @@ export default function ItemForm({ itemId }: ItemFormProps) {
     };
 
     const onSubmit = async (data: ItemFormData) => {
+
+        console.log('JSON data of item:', JSON.stringify(data)); // Log the JSON data for debugging
+
         try {
 
             console.log('JSON data:', JSON.stringify(data)); // Log the JSON data for debugging')

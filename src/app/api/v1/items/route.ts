@@ -58,10 +58,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
     }
 }
-
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
+
+        console.log("log ===> received data from POST request in path src/app/api/v1/items/route.ts:", body);
 
         // Validate incoming data
         const validationErrors = validateItemData(body);
@@ -74,32 +75,52 @@ export async function POST(request: NextRequest) {
             body.itemNumber = await generateItemNumber();
         }
 
+        // Parse IDs to integers
+        const vatId = parseInt(body.vatId, 10);
+        const unitId = parseInt(body.unitId, 10);
+        const classId = parseInt(body.classId, 10);
+
+        // Fetch related records to ensure validity
+        const vat = await prisma.vat.findUnique({
+            where: { id: vatId },
+        });
+        const unit = await prisma.unit.findUnique({
+            where: { id: unitId },
+        });
+        const itemClass = await prisma.itemClass.findUnique({
+            where: { id: classId },
+        });
+
+        if (!vat || !unit || !itemClass) {
+            return NextResponse.json({ error: 'Invalid vatId, unitId, or classId' }, { status: 400 });
+        }
+
+        console.log("log ===> after deleting countryId, vatId, unitId, classId from the body:", body);
+
+        // Create the new item
         const newItem = await prisma.item.create({
             data: {
-                ...body,
-                vat: {
-                    connect: {
-                        id: parseInt(body.vatId, 10),
-                    },
-                },
-                unit: {
-                    connect: {
-                        id: parseInt(body.unitId, 10),
-                    },
-                },
-                itemClass: {
-                    connect: {
-                        id: parseInt(body.classId, 10),
-                    },
-                },
+                itemNumber: body.itemNumber,
+                label: body.label,
+                description: body.description,
+                retailPrice: body.retailPrice,
+                purchasePrice: body.purchasePrice,
                 stockQuantity: body.stockQuantity || 0,
                 minQuantity: body.minQuantity || 0,
+                vat: {
+                    connect: { id: vat.id },
+                },
+                unit: {
+                    connect: { id: unit.id },
+                },
+                itemClass: {
+                    connect: { id: itemClass.id },
+                },
             },
         });
 
         return NextResponse.json(newItem, { status: 201 });
     } catch (error) {
-        // Narrow the type of `error` to handle appropriately
         if (error instanceof Error) {
             console.error('Error creating item:', error.message);
         } else {
