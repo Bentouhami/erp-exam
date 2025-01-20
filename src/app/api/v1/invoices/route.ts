@@ -2,6 +2,7 @@
 
 import {NextRequest, NextResponse} from 'next/server';
 import prisma from '@/lib/db';
+import {generateInvoiceNumber} from "@/lib/utils/invoice";
 
 export async function GET(request: NextRequest) {
     const {searchParams} = new URL(request.url);
@@ -62,6 +63,9 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         console.log('Invoice data received in POST request in path src/app/api/v1/invoices/route.ts:', body);
         const {userId, items, issuedAt, ...invoiceData} = body;
+        if (!body.invoiceNumber) {
+            body.invoiceNumber = await generateInvoiceNumber();
+        }
 
         // Fetch user for payment terms
         const user = await prisma.user.findUnique({

@@ -118,19 +118,6 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                     console.error('Error fetching invoice:', error);
                     toast.error('Failed to fetch invoice');
                 }
-            } else {
-                // Generate a new invoice number
-                try {
-                    const response = await fetch(`${API_DOMAIN}/invoices/generate-number`);
-                    if (!response.ok) {
-                        throw new Error('Failed to generate invoice number');
-                    }
-                    const { invoiceNumber } = await response.json();
-                    form.setValue('invoiceNumber', invoiceNumber);
-                } catch (error) {
-                    console.error('Error generating invoice number:', error);
-                    toast.error('Failed to generate invoice number');
-                }
             }
         };
 
@@ -287,19 +274,19 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 {/* Invoice Number and Dates */}
-                <FormField
-                    control={form.control}
-                    name="invoiceNumber"
-                    render={({field}) => (
-                        <FormItem>
-                            <FormLabel>Invoice Number</FormLabel>
-                            <FormControl>
-                                <Input {...field} disabled/>
-                            </FormControl>
-                            <FormMessage/>
-                        </FormItem>
-                    )}
-                />
+                {/*<FormField*/}
+                {/*    control={form.control}*/}
+                {/*    name="invoiceNumber"*/}
+                {/*    render={({field}) => (*/}
+                {/*        <FormItem>*/}
+                {/*            <FormLabel>Invoice Number</FormLabel>*/}
+                {/*            <FormControl>*/}
+                {/*                <Input {...field} disabled/>*/}
+                {/*            </FormControl>*/}
+                {/*            <FormMessage/>*/}
+                {/*        </FormItem>*/}
+                {/*    )}*/}
+                {/*/>*/}
                 <FormField
                     control={form.control}
                     name="issuedAt"
@@ -313,19 +300,19 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                         </FormItem>
                     )}
                 />
-                <FormField
-                    control={form.control}
-                    name="dueDate"
-                    render={({field}) => (
-                        <FormItem>
-                            <FormLabel>Due Date</FormLabel>
-                            <FormControl>
-                                <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage/>
-                        </FormItem>
-                    )}
-                />
+                {/*<FormField*/}
+                {/*    control={form.control}*/}
+                {/*    name="dueDate"*/}
+                {/*    render={({field}) => (*/}
+                {/*        <FormItem>*/}
+                {/*            <FormLabel>Due Date</FormLabel>*/}
+                {/*            <FormControl>*/}
+                {/*                <Input type="date" {...field} />*/}
+                {/*            </FormControl>*/}
+                {/*            <FormMessage/>*/}
+                {/*        </FormItem>*/}
+                {/*    )}*/}
+                {/*/>*/}
 
                 {/* Customer Selection */}
                 <FormField
