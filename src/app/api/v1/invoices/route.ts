@@ -62,9 +62,9 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         console.log('Invoice data received in POST request in path src/app/api/v1/invoices/route.ts:', body);
-        const {userId, items, issuedAt, ...invoiceData} = body;
-        if (!body.invoiceNumber) {
-            body.invoiceNumber = await generateInvoiceNumber();
+        const {userId, items, issuedAt,invoiceNumber, ...invoiceData} = body;
+        if (!invoiceData.invoiceNumber) {
+            invoiceData.invoiceNumber = await generateInvoiceNumber();
         }
 
         // Fetch user for payment terms
