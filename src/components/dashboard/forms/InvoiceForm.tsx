@@ -257,12 +257,27 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
             }
 
             toast.success(`Invoice ${invoiceId ? 'updated' : 'created'} successfully`);
+
+            // Clear the form data after successful submission
+            form.reset({
+                invoiceNumber: '', // Or generate a new number if required
+                issuedAt: new Date().toISOString().split('T')[0],
+                dueDate: new Date().toISOString().split('T')[0],
+                userId: '',
+                items: [{ itemId: '', quantity: 1, discount: 0 }],
+                totalAmount: 0,
+                totalVatAmount: 0,
+                totalTtcAmount: 0,
+            });
+
+            // Redirect to the invoice list
             router.push(`${DOMAIN}/dashboard/invoices`);
         } catch (error) {
             console.error('Error saving invoice:', error);
             toast.error('Failed to save invoice');
         }
     };
+
 
     if (loading) {
         return <div>Loading...</div>;
