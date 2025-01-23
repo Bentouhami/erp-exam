@@ -1,5 +1,5 @@
 // path: src/app/dashboard/invoices/new/page.tsx
-
+export const dynamic = 'force-dynamic'
 import InvoiceForm from '@/components/dashboard/forms/InvoiceForm'
 
 export default function NewInvoicePage() {

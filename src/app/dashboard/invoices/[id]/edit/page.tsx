@@ -1,7 +1,7 @@
 // Path: src/app/dashboard/invoices/[id]/edit/page.tsx
 
 import InvoiceForm from '@/components/dashboard/forms/InvoiceForm'
-
+export const dynamic = 'force-dynamic'
 /**
  * Edit invoice page component to edit an invoice
  * @param params - id of the invoice to edit
