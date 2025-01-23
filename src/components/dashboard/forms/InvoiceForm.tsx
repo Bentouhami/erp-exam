@@ -108,6 +108,7 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
         fetchUsersAndItems();
 
     }, []);
+
     useEffect(() => {
         const fetchInvoiceOrGenerateNumber = async () => {
             if (invoiceId) {
@@ -121,15 +122,19 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
             } else {
                 // Generate a new invoice number
                 try {
-                    const invoiceNumber = await axios.get(`${API_DOMAIN}/invoices/generate-number`, { headers: { 'Cache-Control': 'no-store, max-age=0' } })
-                    if (!invoiceNumber) {
+                    const response = await axios.get(`${API_DOMAIN}/api/v1/invoices/generate-number`, {
+                        headers: {
+                            "Cache-Control": "no-cache",
+                            Pragma: "no-cache",
+                            Expires: "0",
+                        },
+                    })
+                    if (!response.data.invoiceNumber) {
                         throw new Error("Failed to generate invoice number")
                     }
-                    console.log(`Generated invoice number: ${invoiceNumber}`)
-                    // Set the invoice number in the form
-                    form.reset();
-                    form.setValue("invoiceNumber", invoiceNumber.data.invoiceNumber)
-                    // form.setValue("invoiceNumber", invoiceNumber)
+                    console.log(`Generated invoice number: ${response.data.invoiceNumber}`)
+                    form.reset()
+                    form.setValue("invoiceNumber", response.data.invoiceNumber)
                 } catch (error) {
                     console.error("Error generating invoice number:", error)
                     toast.error("Failed to generate invoice number")
