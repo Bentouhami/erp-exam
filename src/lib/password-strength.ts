@@ -8,7 +8,7 @@ export function checkPasswordStrength(password: string): number {
     // Contains number
     if (/\d/.test(password)) strength += 20;
 
-    // Contains lowercase letter
+    // Contains a lowercase letter
     if (/[a-z]/.test(password)) strength += 20;
 
     // Contains uppercase letter

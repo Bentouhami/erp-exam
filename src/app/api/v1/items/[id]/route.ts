@@ -87,15 +87,30 @@ export async function PUT(request: NextRequest, {params}: { params: { id: string
 /**
  * DELETE an item by ID
  */
-export async function DELETE(request: NextRequest, {params}: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
     try {
-        await prisma.item.delete({
-            where: {id: parseInt(params.id)},
+        const itemId = parseInt(params.id);
+
+        // Check if the item is referenced in any InvoiceDetail
+        const invoiceDetails = await prisma.invoiceDetail.findMany({
+            where: { itemId },
         });
 
-        return NextResponse.json({message: 'Item deleted successfully'}, {status: 200});
+        if (invoiceDetails.length > 0) {
+            return NextResponse.json(
+                { error: 'Cannot delete item: it is referenced in one or more invoices.' },
+                { status: 400 }
+            );
+        }
+
+        // If no references, proceed with deletion
+        await prisma.item.delete({
+            where: { id: itemId },
+        });
+
+        return NextResponse.json({ message: 'Item deleted successfully' }, { status: 200 });
     } catch (error) {
         console.error('Error deleting item:', error);
-        return NextResponse.json({error: 'Failed to delete item'}, {status: 500});
+        return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });
     }
 }

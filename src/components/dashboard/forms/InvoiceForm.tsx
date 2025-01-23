@@ -107,22 +107,40 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
 
     useEffect(() => {
         fetchUsersAndItems();
+
     }, []);
     useEffect(() => {
         const fetchInvoiceOrGenerateNumber = async () => {
             if (invoiceId) {
                 // Fetch an existing invoice
                 try {
-                    await fetchInvoice(invoiceId);
+                    await fetchInvoice(invoiceId)
                 } catch (error) {
-                    console.error('Error fetching invoice:', error);
-                    toast.error('Failed to fetch invoice');
+                    console.error("Error fetching invoice:", error)
+                    toast.error("Failed to fetch invoice")
+                }
+            } else {
+                // Generate a new invoice number
+                try {
+                    const invoiceNumber = await axios.get(`${API_DOMAIN}/invoices/generate-number`)
+                    if (!invoiceNumber) {
+                        throw new Error("Failed to generate invoice number")
+                    }
+                    console.log(`Generated invoice number: ${invoiceNumber}`)
+                    // Set the invoice number in the form
+                    form.reset();
+                    form.setValue("invoiceNumber", invoiceNumber.data.invoiceNumber)
+                    // form.setValue("invoiceNumber", invoiceNumber)
+                } catch (error) {
+                    console.error("Error generating invoice number:", error)
+                    toast.error("Failed to generate invoice number")
                 }
             }
-        };
+            setLoading(false)
+        }
 
-        fetchInvoiceOrGenerateNumber();
-    }, [invoiceId, form]);
+        fetchInvoiceOrGenerateNumber()
+    }, [invoiceId, form])
 
     const fetchUsersAndItems = async () => {
         try {
@@ -166,19 +184,19 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
         }
     };
 
-    // const generateInvoiceNumber = async () => {
-    //     try {
-    //         const response = await fetch(`${API_DOMAIN}/invoices/generate-number`);
-    //         if (!response.ok) {
-    //             throw new Error('Failed to generate invoice number');
-    //         }
-    //         const {invoiceNumber} = await response.json();
-    //         form.setValue('invoiceNumber', invoiceNumber);
-    //     } catch (error) {
-    //         console.error('Error generating invoice number:', error);
-    //         toast.error('Failed to generate invoice number');
-    //     }
-    // };
+    const generateInvoiceNumber = async () => {
+        try {
+            const response = await fetch(`${API_DOMAIN}/invoices/generate-number`);
+            if (!response.ok) {
+                throw new Error('Failed to generate invoice number');
+            }
+            const {invoiceNumber} = await response.json();
+            form.setValue('invoiceNumber', invoiceNumber);
+        } catch (error) {
+            console.error('Error generating invoice number:', error);
+            toast.error('Failed to generate invoice number');
+        }
+    };
 
     const calculateDueDate = (userId: string) => {
         const user = users.find(u => u.id === userId);
@@ -273,20 +291,20 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                {/* Invoice Number and Dates */}
-                {/*<FormField*/}
-                {/*    control={form.control}*/}
-                {/*    name="invoiceNumber"*/}
-                {/*    render={({field}) => (*/}
-                {/*        <FormItem>*/}
-                {/*            <FormLabel>Invoice Number</FormLabel>*/}
-                {/*            <FormControl>*/}
-                {/*                <Input {...field} disabled/>*/}
-                {/*            </FormControl>*/}
-                {/*            <FormMessage/>*/}
-                {/*        </FormItem>*/}
-                {/*    )}*/}
-                {/*/>*/}
+                 Invoice Number and Dates
+                <FormField
+                    control={form.control}
+                    name="invoiceNumber"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Invoice Number</FormLabel>
+                            <FormControl>
+                                <Input {...field} disabled />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField
                     control={form.control}
                     name="issuedAt"
@@ -300,19 +318,19 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                         </FormItem>
                     )}
                 />
-                {/*<FormField*/}
-                {/*    control={form.control}*/}
-                {/*    name="dueDate"*/}
-                {/*    render={({field}) => (*/}
-                {/*        <FormItem>*/}
-                {/*            <FormLabel>Due Date</FormLabel>*/}
-                {/*            <FormControl>*/}
-                {/*                <Input type="date" {...field} />*/}
-                {/*            </FormControl>*/}
-                {/*            <FormMessage/>*/}
-                {/*        </FormItem>*/}
-                {/*    )}*/}
-                {/*/>*/}
+                <FormField
+                    control={form.control}
+                    name="dueDate"
+                    render={({field}) => (
+                        <FormItem>
+                            <FormLabel>Due Date</FormLabel>
+                            <FormControl>
+                                <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage/>
+                        </FormItem>
+                    )}
+                />
 
                 {/* Customer Selection */}
                 <FormField

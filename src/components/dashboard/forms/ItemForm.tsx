@@ -1,22 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React, {useEffect, useState} from 'react';
+import {useRouter} from 'next/navigation';
+import {useForm} from 'react-hook-form';
+import {zodResolver} from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {Button} from '@/components/ui/button';
+import {Form, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form';
 import UnitsDropDown from '@/components/UnitsDropDown';
 import ItemClassDropDown from '@/components/ItemClassDropDown';
 import ItemTaxMultiSelect from '@/components/ItemTaxMultiSelect';
-import { toast } from 'react-toastify';
+import {toast} from 'react-toastify';
 import ItemDetailsSection from "@/components/item-form/ItemDetailsSection";
 import PricingSection from "@/components/item-form/PricingSection";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { API_DOMAIN } from "@/lib/utils/constants";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {API_DOMAIN} from "@/lib/utils/constants";
 import QuantitySection from "@/components/item-form/QuantitySection";
 
 const itemSchema = z.object({
-    itemNumber: z.string().min(1, 'Item number is required'),
     label: z.string().min(1, 'Label is required'),
     description: z.string().optional(),
     retailPrice: z.number().min(0, 'Retail price must be a positive number'),
@@ -35,7 +34,7 @@ interface ItemFormProps {
     itemId?: number;
 }
 
-export default function ItemForm({ itemId }: ItemFormProps) {
+export default function ItemForm({itemId}: ItemFormProps) {
     const router = useRouter();
     const [countries, setCountries] = useState<{ id: number; name: string; countryCode: string }[]>([]);
     const [vatOptions, setVatOptions] = useState<{ id: number; vatType: string; vatPercent: number }[]>([]);
@@ -43,7 +42,6 @@ export default function ItemForm({ itemId }: ItemFormProps) {
     const form = useForm<ItemFormData>({
         resolver: zodResolver(itemSchema),
         defaultValues: {
-            itemNumber: '',
             label: '',
             description: '',
             purchasePrice: 0,
@@ -83,10 +81,11 @@ export default function ItemForm({ itemId }: ItemFormProps) {
     };
 
     const fetchVatOptions = async (countryId: string) => {
+        if (!countryId) return;
         try {
             const response = await fetch(`${API_DOMAIN}/vats?countryId=${countryId}`);
             if (!response.ok) throw new Error('Failed to fetch VAT options');
-            const { vatTypes } = await response.json();
+            const {vatTypes} = await response.json();
             setVatOptions(vatTypes);
         } catch (error) {
             console.error('Error fetching VAT options:', error);
@@ -113,6 +112,12 @@ export default function ItemForm({ itemId }: ItemFormProps) {
     };
 
     const onSubmit = async (data: ItemFormData) => {
+        console.log('Form submitted with data:', data); // Debugging line
+        const isValid = await form.trigger(); // Manually trigger validation
+        if (!isValid) {
+            console.log('Form validation errors:', form.formState.errors); // Debugging line
+            return;
+        }
         try {
             const response = await fetch(`${API_DOMAIN}/items/${itemId || ''}`, {
                 method: itemId ? 'PUT' : 'POST',
@@ -130,19 +135,26 @@ export default function ItemForm({ itemId }: ItemFormProps) {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form
+                onSubmit={form.handleSubmit(
+                    onSubmit,
+                    (errors) => console.error("Validation errors:", errors) // Debug validation errors
+                )}
+                className="space-y-8"
+            >
                 <div>
-                    <ItemDetailsSection control={form.control} showItemNumber={!!itemId} />
-                    <PricingSection control={form.control} />
+                    <ItemDetailsSection control={form.control} showItemNumber={!!itemId}/>
+                    <PricingSection control={form.control}/>
                     <FormField
                         control={form.control}
                         name="countryId"
-                        render={({ field }) => (
+                        render={({field}) => (
                             <FormItem>
                                 <FormLabel>Country</FormLabel>
-                                <Select onValueChange={(value) => handleCountryChange(value)} defaultValue={field.value}>
+                                <Select onValueChange={(value) => handleCountryChange(value)}
+                                        defaultValue={field.value}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select Country" />
+                                        <SelectValue placeholder="Select Country"/>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {countries.map((country) => (
@@ -152,19 +164,19 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <FormMessage />
+                                <FormMessage/>
                             </FormItem>
                         )}
                     />
                     <FormField
                         control={form.control}
                         name="vatId"
-                        render={({ field }) => (
+                        render={({field}) => (
                             <FormItem>
                                 <FormLabel>VAT</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select VAT" />
+                                        <SelectValue placeholder="Select VAT"/>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {vatOptions.map((vat) => (
@@ -174,49 +186,56 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <FormMessage />
+                                <FormMessage/>
                             </FormItem>
                         )}
                     />
                     <FormField
                         control={form.control}
                         name="unitId"
-                        render={({ field }) => (
+                        render={({field}) => (
                             <FormItem>
                                 <FormLabel>Units</FormLabel>
-                                <UnitsDropDown selectedUnitId={field.value} onSelect={(unitId) => field.onChange(unitId)} />
-                                <FormMessage />
+                                <UnitsDropDown selectedUnitId={field.value}
+                                               onSelect={(unitId) => field.onChange(unitId)}/>
+                                <FormMessage/>
                             </FormItem>
                         )}
                     />
                     <FormField
                         control={form.control}
                         name="classId"
-                        render={({ field }) => (
+                        render={({field}) => (
                             <FormItem>
                                 <FormLabel>Item Class</FormLabel>
-                                <ItemClassDropDown selectedClassId={field.value} onSelect={(classId) => field.onChange(classId)} />
-                                <FormMessage />
+                                <ItemClassDropDown selectedClassId={field.value}
+                                                   onSelect={(classId) => field.onChange(classId)}/>
+                                <FormMessage/>
                             </FormItem>
                         )}
                     />
-                    <QuantitySection control={form.control} />
+                    <QuantitySection control={form.control}/>
                     <FormField
                         control={form.control}
                         name="itemTaxes"
-                        render={({ field }) => (
+                        render={({field}) => (
                             <FormItem>
                                 <FormLabel>Additional Taxes</FormLabel>
                                 <ItemTaxMultiSelect
                                     selectedTaxIds={field.value || []}
                                     onChange={(selectedIds) => field.onChange(selectedIds)}
                                 />
-                                <FormMessage />
+                                <FormMessage/>
                             </FormItem>
                         )}
                     />
-                    <Button type="submit">Save Item</Button>
                 </div>
+                <Button
+                    type="submit"
+                    onClick={() => console.log("Save Item button clicked")} // Debug button click
+                >
+                    Save Item
+                </Button>
             </form>
         </Form>
     );

@@ -27,24 +27,33 @@ enum AddressType {
   OFFICE
   BILLING
   SHIPPING
+  OTHER
+
+  @@map("address_types")
 }
 
 enum MovementType {
   PURCHASE
   SALE
   RETURN
+
+  @@map("movement_types")
 }
 
 enum TokenType {
   PASSWORD_RESET
   EMAIL_VERIFICATION
   TWO_FACTOR_AUTH
+
+  @@map("token_types")
 }
 
 enum UtaxType {
   LUXURY
   BASIC
   SPECIAL
+
+  @@map("utax_types")
 }
 
 enum PaymentMode {
@@ -52,6 +61,8 @@ enum PaymentMode {
   CREDIT_CARD
   BANK_TRANSFER
   PAYPAL
+
+  @@map("payment_modes")
 }
 
 enum PaymentStatus {
@@ -59,22 +70,39 @@ enum PaymentStatus {
   CONFIRMED
   CANCELLED
   REFUNDED
+
+  @@map("payment_statuses")
 }
 
 enum VatType {
   REDUCED
   STANDARD
   EXEMPT
+
+  @@map("vat_types")
 }
 
 enum ItemType {
   PHYSICAL
   DIGITAL
+
+  @@map("item_types")
 }
 
 enum ItemStatus {
   ACTIVE
   INACTIVE
+
+  @@map("item_statuses")
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELED
+
+  @@map("invoice_statuses")
 }
 
 // User model
@@ -314,15 +342,16 @@ model Item {
 
 // Invoice model
 model Invoice {
-  id              Int      @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   userId          String
-  invoiceNumber   String   @unique @db.VarChar(20) // Numéro unique attribué à la facture pour l'identifier (ex. INV-1234567890123)
-  issuedAt        DateTime @default(now()) // Date d'émission de la facture e.g. 2023-01-31  il représente la date à laquelle la facture est émise (émission).
+  invoiceNumber   String        @unique @db.VarChar(20) // Numéro unique attribué à la facture pour l'identifier (ex. INV-1234567890123)
+  issuedAt        DateTime      @default(now()) // Date d'émission de la facture e.g. 2023-01-31  il représente la date à laquelle la facture est émise (émission).
   dueDate         DateTime // Date limite de paiement pour la facture e.g. 2023-01-31  il représente la date à laquelle la facture est due, c'est-à-dire que la facture est payée (paiement).
-  flag_accounting Boolean  @default(false) // Indique si la facture est comptabilisée (true) ou non (false) dans le système. Par défaut, la facture est comptabilisée.
-  totalAmount     Decimal  @db.Decimal(10, 2) // Montant total hors taxes (HT) e.g. 10 euros
-  totalVatAmount  Decimal  @db.Decimal(10, 2) // Montant total de la TVA e.g. 10 euros
-  totalTtcAmount  Decimal  @db.Decimal(10, 2) // Montant total TTC (HT + TVA) e.g. 20 euros
+  flag_accounting Boolean       @default(false) // Indique si la facture est comptabilisée (true) ou non (false) dans le système. Par défaut, la facture est comptabilisée.
+  totalAmount     Decimal       @db.Decimal(10, 2) // Montant total hors taxes (HT) e.g. 10 euros
+  totalVatAmount  Decimal       @db.Decimal(10, 2) // Montant total de la TVA e.g. 10 euros
+  totalTtcAmount  Decimal       @db.Decimal(10, 2) // Montant total TTC (HT + TVA) e.g. 20 euros
+  status          InvoiceStatus @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

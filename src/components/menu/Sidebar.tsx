@@ -1,227 +1,241 @@
 'use client';
-import React, {useState} from 'react';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {usePathname, useRouter} from 'next/navigation';
-import {signOut, useSession} from 'next-auth/react';
-import {Bell, FileText, Home, LogIn, LogOut, Monitor, Moon, Package, Settings, Sun, User, Users} from 'lucide-react';
-import {useTheme} from 'next-themes';
-import {LiaFileInvoiceDollarSolid} from "react-icons/lia";
+import { usePathname, useRouter } from 'next/navigation';
+import {
+    Home, FileText, Users, Package, Settings, ChevronLeft, ChevronRight, Menu,
+    Sun, Moon, Laptop, Bell, LogOut
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSession, signOut } from 'next-auth/react';
 
 const Sidebar = () => {
-    const pathname = usePathname();
-    const router = useRouter();
-    const {data: session, status} = useSession();
-    const {theme, setTheme} = useTheme();
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-
-    React.useEffect(() => setMounted(true), []);
+    const pathname = usePathname();
+    const { theme, setTheme } = useTheme();
+    const { data: session } = useSession();
+    const router = useRouter();
 
     const menuItems = [
-        {name: 'Dashboard', icon: Home, path: '/dashboard'},
-        {name: 'Invoices', icon: FileText, path: '/dashboard/invoices'},
-        {name: 'Users', icon: Users, path: '/dashboard/users'},
-        {name: 'Items', icon: Package, path: '/dashboard/items'},
-        {name: 'Settings', icon: Settings, path: '/dashboard/settings'},
+        { name: 'Dashboard', icon: Home, path: '/dashboard' },
+        { name: 'Invoices', icon: FileText, path: '/dashboard/invoices' },
+        { name: 'Users', icon: Users, path: '/dashboard/users' },
+        { name: 'Items', icon: Package, path: '/dashboard/items' },
+        { name: 'Settings', icon: Settings, path: '/dashboard/settings' },
     ];
-    // Filter menu items based on the user's role
-    const filteredMenuItems =
-        session?.user?.role === 'ACCOUNTANT'
-            ? menuItems.filter((item) => !['Users', 'Items', 'Settings'].includes(item.name)) // Hide "Users" and "Items"
-            // for accountants
-            : menuItems;
+
+    // Filter menu items based on user role
+    const filteredMenuItems = session?.user?.role === 'ACCOUNTANT'
+        ? menuItems.filter(item => !['Users', 'Items', 'Settings'].includes(item.name))
+        : menuItems;
+
+    useEffect(() => {
+        setMounted(true);
+        document.body.style.overflow = isMobileOpen ? 'hidden' : 'unset';
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMobileOpen]);
+
+    const toggleSidebar = () => setIsCollapsed(!isCollapsed);
+    const toggleMobileSidebar = () => setIsMobileOpen(!isMobileOpen);
+
+    useEffect(() => {
+        setIsMobileOpen(false);
+    }, [pathname]);
+
+    const themeOptions = [
+        { value: 'light', icon: Sun, label: 'Light' },
+        { value: 'dark', icon: Moon, label: 'Dark' },
+        { value: 'system', icon: Laptop, label: 'System' }
+    ];
 
     if (!mounted) return null;
 
     return (
-        <div
-            className="flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 w-16 sm:w-64 h-screen relative z-50">
+        <div>
+            {/* Mobile Navbar */}
+            <div className="md:hidden fixed top-0 left-0 w-full bg-background z-50 border-b px-4 py-3 flex items-center justify-between backdrop-blur-lg bg-opacity-90">
+                <Button variant="ghost" size="icon" onClick={toggleMobileSidebar}
+                        className="hover:bg-secondary">
+                    <Menu size={20} />
+                </Button>
+                <div className="flex items-center space-x-4">
+                    <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                        Gest Fac
+                    </h1>
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Bell size={20} />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                        <DropdownMenuItem>
+                            <span>New notification</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
 
-            {/* Profile Section */}
-            <div className="p-4 border-b dark:border-gray-700 relative">
-                {/* Centered Logo Section */}
-                <div className="flex flex-col items-center space-y-2">
-                    <div className="flex items-center space-x-2">
-                        {/* "Gest" Text */}
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                            Gest
+            {/* Desktop Sidebar */}
+            <div
+                className={cn(
+                    'fixed md:relative z-40 h-screen border-r bg-background/60 backdrop-blur-xl',
+                    'transition-all duration-300 ease-in-out',
+                    isCollapsed ? 'w-20' : 'w-72',
+                    isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+                    'flex flex-col'
+                )}
+            >
+                {/* Sidebar Header */}
+                <div className="p-6 flex justify-between items-center border-b">
+                    <div className={cn(
+                        "flex items-center space-x-3 transition-all duration-300",
+                        isCollapsed && "opacity-0 w-0 hidden"
+                    )}>
+                        <h1 className="font-bold text-2xl bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                            Gest Fac
                         </h1>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={toggleSidebar}
+                        className="hidden md:flex hover:bg-secondary"
+                    >
+                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                    </Button>
+                </div>
 
-                        {/* Rotated Logo */}
-                        <LiaFileInvoiceDollarSolid
-                            className="h-10 w-10 text-gray-600 dark:text-gray-300 transform rotate-45"
-                        />
-
-                        {/* "Fac" Text */}
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                            Fac
-                        </h1>
+                {/* User Profile Section */}
+                <div className={cn(
+                    "p-6 border-b",
+                    isCollapsed ? "flex justify-center" : ""
+                )}>
+                    <div className={cn(
+                        "flex items-center space-x-4",
+                        isCollapsed && "flex-col space-x-0 space-y-2"
+                    )}>
+                        <Avatar className="h-10 w-10 border-2 border-primary/20">
+                            <AvatarImage src={session?.user?.image || undefined} />
+                            <AvatarFallback>
+                                {session?.user?.name?.[0] || 'U'}
+                            </AvatarFallback>
+                        </Avatar>
+                        {!isCollapsed && (
+                            <div className="space-y-1">
+                                <h2 className="text-sm font-semibold">{session?.user?.name || 'User'}</h2>
+                                <p className="text-xs text-muted-foreground capitalize">
+                                    {session?.user?.role?.toLowerCase()}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Button Section */}
-                <div className="flex items-center justify-center mt-4">
-                    <button
-                        onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                        className="flex items-center space-x-3 mb-3"
-                    >
-                        {/* User Info (visible on medium and up) */}
-                        {status === 'authenticated' && (
-                            <div className="hidden sm:block">
-                                <div
-                                    className="flex items-center space-x-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
-                                    <User className="h-6 w-6 text-gray-600 dark:text-gray-300"/>
-                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                        {session.user?.name || 'User'}
-                                    </h2>
-                                <p className=" text-gray-500  text-sm dark:text-gray-400 truncate absolute bottom-0 right-10">
-                                    {session.user?.role}
-                                </p>
-                                </div>
-                            </div>
-                        )}
-                    </button>
-                </div>
+                {/* Navigation Links */}
+                <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-none">
+                    {filteredMenuItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname.startsWith(item.path);
 
-
-                {/* User Dropdown - Now positioned absolutely */}
-                {userDropdownOpen && (
-                    <>
-                        {/* Backdrop */}
-                        <div
-                            className="fixed inset-0 bg-black/20 dark:bg-black/40 z-50"
-                            onClick={() => setUserDropdownOpen(false)}
-                        />
-                        {/* Dropdown Content - Width based on content */}
-                        <div
-                            className="fixed sm:absolute left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-200 dark:border-gray-700">
-                            {status === 'authenticated' && (
-                                <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                                    <div className="p-2">
-                                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                            {session.user?.email}
-                                        </p>
-                                    </div>
-                                    <div className="p-2 flex items-center justify-between">
-                                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                            Notifications
-                                        </span>
-                                        <div className="flex items-center space-x-2">
-                                            <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300"/>
-                                            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                                                3
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
-
-            {/* Main content - Keep the margin to push sidebar content down, but smaller */}
-            <div className={`flex-1 flex flex-col  ${userDropdownOpen ? 'mt-24' : ''} transition-all duration-200`}>
-                {/* Dark Mode Toggle */}
-                <div className="p-4 border-t dark:border-gray-700 relative">
-                    <button
-                        onClick={() => setDropdownOpen(!dropdownOpen)}
-                        className="flex items-center justify-center sm:justify-start space-x-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-full p-2"
-                    >
-                        {theme === 'dark' ? (
-                            <Moon className="h-5 w-5"/>
-                        ) : theme === 'light' ? (
-                            <Sun className="h-5 w-5"/>
-                        ) : (
-                            <Monitor className="h-5 w-5"/>
-                        )}
-                        <span className="hidden sm:inline">Mode: {theme}</span>
-                    </button>
-
-                    {dropdownOpen && (
-                        <>
-                            {/* Backdrop to close dropdown on outside click */}
-                            <div
-                                className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40"
-                                onClick={() => setDropdownOpen(false)}
-                            />
-                            {/* Dropdown Content */}
-                            <div
-                                className="absolute left-0 mt-2 w-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-200 dark:border-gray-700"
+                        return (
+                            <Link
+                                key={item.name}
+                                href={item.path}
+                                onClick={toggleMobileSidebar}
                             >
-                                <ul className="space-y-1 p-2">
-                                    {[
-                                        {name: 'Light', icon: Sun, theme: 'light'},
-                                        {name: 'Dark', icon: Moon, theme: 'dark'},
-                                        {name: 'System', icon: Monitor, theme: 'system'}
-                                    ].map(({name, icon: Icon, theme: themeOption}) => (
-                                        <li
-                                            key={name}
-                                            onClick={() => {
-                                                setTheme(themeOption);
-                                                setDropdownOpen(false);
-                                            }}
-                                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer rounded-md"
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <Icon className="h-5 w-5"/>
-                                                <span>{name}</span>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                {/* Navigation */}
-                <nav className="flex-1 p-4">
-                    <ul className="space-y-2">
-                        {filteredMenuItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = pathname === item.path;
-                            return (
-                                <li key={item.path}>
-                                    <Link
-                                        href={item.path}
-                                        className={`flex items-center justify-center sm:justify-start space-x-3 p-2 rounded-lg transition-colors ${
-                                            isActive
-                                                ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-                                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                                        }`}
-                                    >
-                                        <Icon className="h-5 w-5"/>
-                                        <span className="hidden sm:inline">{item.name}</span>
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                                <Button
+                                    variant={isActive ? 'secondary' : 'ghost'}
+                                    className={cn(
+                                        'w-full group relative',
+                                        isCollapsed ? 'justify-center' : 'justify-start',
+                                        'hover:bg-secondary transition-all duration-200',
+                                        isActive && 'font-semibold'
+                                    )}
+                                >
+                                    <Icon size={20} className={cn(
+                                        "transition-transform duration-200",
+                                        isActive ? "text-primary" : "text-muted-foreground",
+                                        "group-hover:scale-110"
+                                    )} />
+                                    {!isCollapsed && (
+                                        <span className="ml-3">{item.name}</span>
+                                    )}
+                                </Button>
+                            </Link>
+                        );
+                    })}
                 </nav>
 
-                {/* Bottom Section */}
-                <div className="p-4 border-t dark:border-gray-700">
-                    {status === 'authenticated' ? (
-                        <button
-                            onClick={() => signOut({redirectTo: '/auth'})}
-                            className="flex items-center justify-center sm:justify-start space-x-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-full p-2"
-                        >
-                            <LogOut className="h-5 w-5"/>
-                            <span className="hidden sm:inline">Déconnexion</span>
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => router.push('/auth')}
-                            className="flex items-center justify-center sm:justify-start space-x-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-full p-2"
-                        >
-                            <LogIn className="h-5 w-5"/>
-                            <span className="hidden sm:inline">Se connecter</span>
-                        </button>
-                    )}
+                {/* Theme Toggle & Logout */}
+                <div className="p-4 border-t space-y-4">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                className={cn(
+                                    "w-full",
+                                    isCollapsed ? "justify-center" : "justify-start"
+                                )}
+                            >
+                                {theme === 'dark' ? <Moon size={20} /> : theme === 'light' ? <Sun size={20} /> : <Laptop size={20} />}
+                                {!isCollapsed && <span className="ml-3">Theme</span>}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align={isCollapsed ? "center" : "start"}>
+                            {themeOptions.map((option) => {
+                                const Icon = option.icon;
+                                return (
+                                    <DropdownMenuItem
+                                        key={option.value}
+                                        onClick={() => setTheme(option.value)}
+                                        className="cursor-pointer"
+                                    >
+                                        <Icon size={16} className="mr-2" />
+                                        <span>{option.label}</span>
+                                    </DropdownMenuItem>
+                                );
+                            })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button
+                        variant="ghost"
+                        className={cn(
+                            "w-full hover:bg-destructive/10 hover:text-destructive",
+                            isCollapsed ? "justify-center" : "justify-start"
+                        )}
+                        onClick={() => signOut({ callbackUrl: '/auth' })}
+                    >
+                        <LogOut size={20} />
+                        {!isCollapsed && <span className="ml-3">Logout</span>}
+                    </Button>
                 </div>
             </div>
+
+            {/* Overlay for mobile */}
+            {isMobileOpen && (
+                <div
+                    className="fixed inset-0 bg-background/80 backdrop-blur-sm z-30 md:hidden"
+                    onClick={toggleMobileSidebar}
+                />
+            )}
         </div>
     );
 };

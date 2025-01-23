@@ -157,7 +157,7 @@ export default function ItemList() {
     const handleDeleteItem = async (itemId: number) => {
         {
             try {
-                const response = await axios.delete(`api/v1/items/${itemId}`);
+                const response = await axios.delete(`${API_DOMAIN}/items/${itemId}`);
                 if (response.status !== 200 || !response.data) {
                     throw new Error('Failed to delete item');
                 }
