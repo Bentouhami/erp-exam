@@ -121,7 +121,7 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
             } else {
                 // Generate a new invoice number
                 try {
-                    const invoiceNumber = await axios.get(`${API_DOMAIN}/invoices/generate-number`)
+                    const invoiceNumber = await axios.get(`${API_DOMAIN}/invoices/generate-number`, { headers: { 'Cache-Control': 'no-store, max-age=0' } })
                     if (!invoiceNumber) {
                         throw new Error("Failed to generate invoice number")
                     }
