@@ -12,15 +12,26 @@ import {auth} from "@/auth/auth";
 export async function GET(req: NextRequest) {
 
     if (req.method !== 'GET') {
-        return NextResponse.json({message: 'Method not allowed'}, {status: 405});
+        return NextResponse.json(
+            {
+                message: 'Method not allowed'
+            }, {
+                status: 405,
+                headers: {'Cache-Control': 'no-store, max-age=0'}
+            }
+        );
     }
 
     // verify if the user is authenticated using Auth.js V5 in server side
     const session = await auth()
 
-    if (!session?.user) return NextResponse.json({message: 'Unauthorized'}, {status: 401});
+    if (!session?.user) return NextResponse.json({message: 'Unauthorized'},
+        {
+            status: 401,
+            headers: {'Cache-Control': 'no-store, max-age=0'}
+        }
+    );
     // const user = session.user;
-
 
     try {
         const totalInvoices = await prisma.invoice.count();
@@ -35,9 +46,12 @@ export async function GET(req: NextRequest) {
 // Extract the total sum value
         const totalAmountSum = totalRevenue._sum.totalAmount ?? 0;
 
-        return NextResponse.json({totalInvoices, totalCustomers, totalItems, totalAmountSum}, {status: 200});
+        return NextResponse.json({totalInvoices, totalCustomers, totalItems, totalAmountSum}, {
+            status: 200,
+            headers: {'Cache-Control': 'no-store, max-age=0'}
+        });
     } catch (error) {
         console.error('Error fetching summary data:', error);
-        return NextResponse.json({message: 'Error fetching summary data'}, {status: 500});
+        return NextResponse.json({message: 'Error fetching summary data'}, {status: 500, headers: {'Cache-Control': 'no-store, max-age=0'}});
     }
 }

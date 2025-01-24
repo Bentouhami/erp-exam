@@ -1,6 +1,6 @@
 // path: src/app/api/v1/invoices/generate-number/route.ts
-import { type NextRequest, NextResponse } from "next/server"
-import { generateInvoiceNumber } from "@/lib/utils/invoice"
+import {type NextRequest, NextResponse} from "next/server"
+import {generateInvoiceNumber} from "@/lib/utils/invoice"
 
 export async function GET(req: NextRequest) {
     let retries = 3
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
             if (!invoiceNumber) {
                 console.error("Invoice number generation failed")
                 return NextResponse.json(
-                    { message: "Invoice number not found" },
+                    {message: "Invoice number not found"},
                     {
                         status: 404,
                         headers: {
@@ -21,8 +21,9 @@ export async function GET(req: NextRequest) {
             }
             console.log(`Generated invoice number: ${invoiceNumber}`)
             return NextResponse.json(
-                { invoiceNumber },
+                {invoiceNumber},
                 {
+                    status: 200,
                     headers: {
                         "Cache-Control": "no-store, max-age=0",
                     },
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
             retries--
             if (retries === 0) {
                 return NextResponse.json(
-                    { message: "Error generating invoice number after multiple attempts" },
+                    {message: "Error generating invoice number after multiple attempts"},
                     {
                         status: 500,
                         headers: {

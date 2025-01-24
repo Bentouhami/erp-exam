@@ -1,7 +1,7 @@
 // path: src/app/api/v1/dashboard/monthly-summary/route.ts
 
-import { NextResponse } from 'next/server';
-import { getMonthlyCustomersSummary, getMonthlyInvoiceSummary } from "@/services/backend_Services/Bk_InvoiceService";
+import {NextResponse} from 'next/server';
+import {getMonthlyCustomersSummary, getMonthlyInvoiceSummary} from "@/services/backend_Services/Bk_InvoiceService";
 
 export async function GET() {
     try {
@@ -20,10 +20,26 @@ export async function GET() {
             return acc;
         }, {} as { [month: string]: { totalAmount: number; totalTtcAmount: number; totalCustomers: number } });
 
-        return NextResponse.json(combinedData, { status: 200 });
+        return NextResponse.json(
+            combinedData,
+            {
+                status: 200, headers: {
+                    'Cache-Control': 'no-store, max-age=0'
+                }
+            }
+        );
     } catch (error) {
         console.error('Error fetching monthly summary:', error);
-        return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
+        return NextResponse.json(
+            {
+                error: 'Failed to fetch data'
+            }, {
+                status: 500,
+                headers: {
+                    'Cache-Control': 'no-store, max-age=0'
+                }
+            }
+        );
     }
 }
 

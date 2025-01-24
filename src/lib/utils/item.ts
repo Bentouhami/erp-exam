@@ -5,7 +5,7 @@ import prisma from "@/lib/db";
 export async function generateItemNumber(): Promise<string> {
     // Get the current year and month
     const date = new Date();
-    const year = date.getFullYear().toString().slice(-2); // Get last 2 digits of year
+    const year = date.getFullYear().toString().slice(-2); // Get last 2 digits of the year
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
 
     // Find the last item created this year
@@ -27,7 +27,7 @@ export async function generateItemNumber(): Promise<string> {
         sequenceNumber = 1;
     } else {
         // Extract the sequence number from the last item number
-        // Format: ITM2501000001  -> extract the last 6 digits
+        // Format: ITM2501000001 -> extract the last 6 digits
         const lastSequence = parseInt(lastItem.itemNumber.slice(-6));
         sequenceNumber = lastSequence + 1;
     }
