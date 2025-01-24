@@ -29,8 +29,9 @@ export async function GET(req: NextRequest, {params}: { params: { role: string }
                 userNumber: true,
                 firstName: true,
                 lastName: true,
-                email: true,
+                name: true,
                 role: true,
+                email: true,
                 isEnabled: true,
                 isVerified: true,
                 isEnterprise: true,
@@ -53,6 +54,7 @@ export async function GET(req: NextRequest, {params}: { params: { role: string }
             userNumber: user.userNumber || '',
             firstName: user.firstName || '',
             lastName: user.lastName || '',
+            name: user.name || '',
             email: user.email || '',
             role: user.role || '',
         }));

@@ -44,6 +44,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             data: {
                 firstName,
                 lastName,
+                name: `${firstName} ${lastName}`,
                 email,
                 role,
             },
@@ -52,6 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
                 userNumber: true,
                 firstName: true,
                 lastName: true,
+                name: true,
                 email: true,
                 role: true,
                 createdAt: true,

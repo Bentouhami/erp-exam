@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, {useEffect, useState} from 'react';
+import {useRouter} from 'next/navigation';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,25 +10,26 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreHorizontal, ChevronDown } from 'lucide-react';
-import { toast } from 'react-toastify';
-import { ListSkeleton } from "@/components/skeletons/ListSkeleton";
+import {ArrowUpDown, ChevronDown, MoreHorizontal} from 'lucide-react';
+import {toast} from 'react-toastify';
+import {ListSkeleton} from "@/components/skeletons/ListSkeleton";
 import axios from "axios";
-import { API_DOMAIN } from "@/lib/utils/constants";
-import { format } from 'date-fns';
+import {API_DOMAIN} from "@/lib/utils/constants";
+import {format} from 'date-fns';
 
 type User = {
     id?: string;
     userNumber?: string;
     firstName?: string;
     lastName?: string;
+    name?: string;
+    role?: string;
     email?: string;
     phone?: string;
     mobile?: string;
     fax?: string;
     additionalInfo?: string;
     paymentTermDays?: number;
-    role?: string;
     isEnterprise?: boolean;
     isVerified?: boolean;
     isEnabled?: boolean;
@@ -50,11 +51,11 @@ interface UsersListProps {
     role?: string;
 }
 
-export default function UsersList({ role }: UsersListProps) {
+export default function UsersList({role}: UsersListProps) {
     const [users, setUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'userNumber', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState<SortConfig>({key: 'userNumber', direction: 'asc'});
     const [currentPage, setCurrentPage] = useState(1);
     const [usersPerPage] = useState(10);
     const [loading, setLoading] = useState(true);
@@ -66,6 +67,8 @@ export default function UsersList({ role }: UsersListProps) {
         userNumber: '',
         firstName: '',
         lastName: '',
+        name: '',
+        role: '',
         email: '',
         phone: '',
         isEnterprise: '',
@@ -82,12 +85,14 @@ export default function UsersList({ role }: UsersListProps) {
         userNumber: true,
         firstName: true,
         lastName: true,
+        name: true,
+        role: true,
         email: true,
         phone: true,
         vatNumber: true,
-        isEnterprise: true,
-        isVerified: true,
-        isEnabled: true,
+        isEnterprise: false,
+        isVerified: false,
+        isEnabled: false,
         companyName: false,
         companyNumber: false,
         exportNumber: false,
@@ -135,6 +140,8 @@ export default function UsersList({ role }: UsersListProps) {
                 (!filters.userNumber || user.userNumber?.includes(filters.userNumber)) &&
                 (!filters.firstName || user.firstName?.toLowerCase().includes(filters.firstName.toLowerCase())) &&
                 (!filters.lastName || user.lastName?.toLowerCase().includes(filters.lastName.toLowerCase())) &&
+                (!filters.name || user.name?.toLowerCase().includes(filters.name.toLowerCase())) &&
+                (!filters.role || user.role?.toLowerCase().includes(filters.role.toLowerCase())) &&
                 (!filters.email || user.email?.toLowerCase().includes(filters.email.toLowerCase())) &&
                 (!filters.phone || user.phone?.includes(filters.phone)) &&
                 (!filters.isEnterprise || user.isEnterprise?.toString() === filters.isEnterprise) &&
@@ -162,7 +169,7 @@ export default function UsersList({ role }: UsersListProps) {
         if (sortConfig.key === key && sortConfig.direction === 'asc') {
             direction = 'desc';
         }
-        setSortConfig({ key, direction });
+        setSortConfig({key, direction});
 
         const sortedUsers = [...filteredUsers].sort((a, b) => {
             const aValue = a[key];
@@ -224,6 +231,8 @@ export default function UsersList({ role }: UsersListProps) {
                 user.userNumber,
                 user.firstName,
                 user.lastName,
+                user.name,
+                user.role,
                 user.email,
                 user.phone,
                 user.vatNumber,
@@ -239,7 +248,7 @@ export default function UsersList({ role }: UsersListProps) {
     }, [searchTerm, users, filters]);
 
     if (loading) {
-        return <ListSkeleton />;
+        return <ListSkeleton/>;
     }
 
     if (error) {
@@ -280,6 +289,20 @@ export default function UsersList({ role }: UsersListProps) {
                 />
                 <Input
                     type="text"
+                    placeholder="Name"
+                    value={filters.name}
+                    onChange={(e) => handleFilterChange('name', e.target.value)}
+                    className="max-w-sm"
+                />
+                <Input
+                    type="text"
+                    placeholder="Role"
+                    value={filters.role}
+                    onChange={(e) => handleFilterChange('role', e.target.value)}
+                    className="max-w-sm"
+                />
+                <Input
+                    type="text"
                     placeholder="Email"
                     value={filters.email.trim()}
                     onChange={(e) => handleFilterChange('email', e.target.value.trim())}
@@ -295,7 +318,7 @@ export default function UsersList({ role }: UsersListProps) {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline">
-                            Columns <ChevronDown className="ml-2 h-4 w-4" />
+                            Columns <ChevronDown className="ml-2 h-4 w-4"/>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
@@ -332,7 +355,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('userNumber')}>
                                     User Number
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -340,7 +363,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('firstName')}>
                                     First Name
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -348,7 +371,24 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('lastName')}>
                                     Last Name
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                </Button>
+                            </TableHead>
+                        )}
+
+                        {visibleColumns.name && (
+                            <TableHead>
+                                <Button variant="ghost" onClick={() => handleSort('name')}>
+                                    Name
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                </Button>
+                            </TableHead>
+                        )}
+                        {visibleColumns.role && (
+                            <TableHead>
+                                <Button variant="ghost" onClick={() => handleSort('role')}>
+                                    Role
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -356,7 +396,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('email')}>
                                     Email
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -364,7 +404,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('phone')}>
                                     Phone
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -372,7 +412,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('vatNumber')}>
                                     VAT Number
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -380,7 +420,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('companyName')}>
                                     Company Name
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -388,7 +428,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('companyNumber')}>
                                     Company Number
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -396,7 +436,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('exportNumber')}>
                                     Export Number
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -404,7 +444,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('lastLogin')}>
                                     Last Login
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -412,7 +452,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('isEnterprise')}>
                                     Enterprise
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -420,7 +460,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('isVerified')}>
                                     Verified
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -428,7 +468,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('isEnabled')}>
                                     Enabled
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -436,7 +476,7 @@ export default function UsersList({ role }: UsersListProps) {
                             <TableHead>
                                 <Button variant="ghost" onClick={() => handleSort('createdAt')}>
                                     Created At
-                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
                         )}
@@ -449,6 +489,8 @@ export default function UsersList({ role }: UsersListProps) {
                             {visibleColumns.userNumber && <TableCell>{user.userNumber}</TableCell>}
                             {visibleColumns.firstName && <TableCell>{user.firstName}</TableCell>}
                             {visibleColumns.lastName && <TableCell>{user.lastName}</TableCell>}
+                            {visibleColumns.name && <TableCell>{user.name}</TableCell>}
+                            {visibleColumns.role && <TableCell>{user.role}</TableCell>}
                             {visibleColumns.email && <TableCell>{user.email}</TableCell>}
                             {visibleColumns.phone && <TableCell>{user.phone}</TableCell>}
                             {visibleColumns.vatNumber && <TableCell>{user.vatNumber}</TableCell>}
@@ -460,21 +502,24 @@ export default function UsersList({ role }: UsersListProps) {
                             )}
                             {visibleColumns.isEnterprise && (
                                 <TableCell>
-                                    <span className={user.isEnterprise ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                                    <span
+                                        className={user.isEnterprise ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
                                         {user.isEnterprise ? "Yes" : "No"}
                                     </span>
                                 </TableCell>
                             )}
                             {visibleColumns.isVerified && (
                                 <TableCell>
-                                    <span className={user.isVerified ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                                    <span
+                                        className={user.isVerified ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
                                         {user.isVerified ? "Yes" : "No"}
                                     </span>
                                 </TableCell>
                             )}
                             {visibleColumns.isEnabled && (
                                 <TableCell>
-                                    <span className={user.isEnabled ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                                    <span
+                                        className={user.isEnabled ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
                                         {user.isEnabled ? "Yes" : "No"}
                                     </span>
                                 </TableCell>
@@ -487,13 +532,15 @@ export default function UsersList({ role }: UsersListProps) {
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" className="h-8 w-8 p-0">
                                             <span className="sr-only">Open menu</span>
-                                            <MoreHorizontal className="h-4 w-4" />
+                                            <MoreHorizontal className="h-4 w-4"/>
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem onClick={() => user.id && handleEdit(user.id)}>Edit</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => user.id && handleDelete(user.id)}>Delete</DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => user.id && handleEdit(user.id)}>Edit</DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => user.id && handleDelete(user.id)}>Delete</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
