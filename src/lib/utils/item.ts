@@ -30,7 +30,7 @@ export async function generateItemNumber(): Promise<string> {
                 nextNumber = lastSequence + 1
             }
 
-            return `INV${year}${month}${nextNumber.toString().padStart(6, "0")}`
+            return `ITM${year}${month}${nextNumber.toString().padStart(6, "0")}`
         })
     } catch (error) {
         console.error("Error generating invoice number:", error)
