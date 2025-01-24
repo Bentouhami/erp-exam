@@ -127,9 +127,9 @@ export default function ItemForm({ itemId }: ItemFormProps) {
         try {
             const response = await axios.get(`${API_DOMAIN}/items/generate-number`, {
                 headers: {
-                    'Cache-Control': 'no-cache',
-                    Pragma: 'no-cache',
-                    Expires: '0',
+                    "Cache-Control": "no-cache",
+                    Pragma: "no-cache",
+                    Expires: "0",
                 },
             });
             if (!response.data.itemNumber) {
