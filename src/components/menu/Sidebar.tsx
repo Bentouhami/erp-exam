@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession, signOut } from 'next-auth/react';
+import { DOMAIN } from '@/lib/utils/constants';
 
 const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -255,7 +256,7 @@ const Sidebar = () => {
                                 "w-full hover:bg-primary/10 hover:text-primary",
                                 isCollapsed ? "justify-center" : "justify-start"
                             )}
-                            onClick={() => router.push('/auth')}
+                            onClick={() => router.push(`${DOMAIN}/auth`)}
                         >
                             <LogIn size={20} />
                             {!isCollapsed && <span className="ml-3">Log in</span>}

@@ -28,11 +28,8 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
                         password: credentials.password as string,
                     });
 
-                    console.log("user found by email and or phone number in isUserAlreadyExist function in path: src/app/api/v1/users/verify/route.ts: ", user);
-
                     // 2. Return the user if login is successful
                     if (user) {
-                        console.log("user found by email and or phone number in isUserAlreadyExist function in path: src/app/api/v1/users/verify/route.ts: ", user);
 
                         return {
                             id: user.id,
@@ -43,10 +40,8 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
                         };
                     }
 
-                    console.log("user not found by email and or phone number in isUserAlreadyExist function in path: src/app/api/v1/users/verify/route.ts return NULL");
 
-
-                    return null; // Return null if no user is found
+                    return null; // Return null if login fails
                 } catch (error) {
                     console.error("Error during login:", error);
                     throw new Error("Invalid credentials.");
@@ -60,7 +55,7 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
                 token.id = user.id ? user.id.toString() : null;
                 token.userNumber = user.userNumber;
                 token.role = user.role;
-                token.email = user.email!; // Ensure email is always defined
+                token.email = user.email!;
                 token.name = user.name;
             }
             return token;
