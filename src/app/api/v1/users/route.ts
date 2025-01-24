@@ -1,8 +1,11 @@
 // src/app/api/v1/users/route.ts
-import {NextResponse} from 'next/server'
+import {NextRequest, NextResponse} from 'next/server'
 import prisma from '@/lib/db'
 
-export async function GET() {
+export async function GET(request : NextRequest) {
+
+    if(request.method !== 'GET') return NextResponse.json({error: "Methode not allowed"}, {status: 405})
+
     try {
         const users = await prisma.user.findMany({
             select: {
@@ -28,7 +31,9 @@ export async function GET() {
     }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+    if(request.method !== 'DELETE') return NextResponse.json({error: "Method not allowed"}, {status: 405})
+
     try {
         const {searchParams} = new URL(request.url)
         const id = searchParams.get('id')

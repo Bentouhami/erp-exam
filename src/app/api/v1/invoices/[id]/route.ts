@@ -1,6 +1,6 @@
 // Path: src/app/api/v1/invoices/[id]/route.ts
 
-import { NextRequest, NextResponse } from 'next/server';
+import {NextRequest, NextResponse} from 'next/server';
 import prisma from '@/lib/db';
 
 /**
@@ -9,10 +9,15 @@ import prisma from '@/lib/db';
  * @param params
  * @constructor
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, {params}: { params: { id: string } }) {
+
+    if (request.method !== 'GET') {
+        return NextResponse.json({error: 'Method not allowed'}, {status: 405});
+    }
+
     try {
         const invoice = await prisma.invoice.findUnique({
-            where: { id: parseInt(params.id) },
+            where: {id: parseInt(params.id)},
             include: {
                 User: true,
                 invoiceDetails: {
@@ -28,13 +33,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         });
 
         if (!invoice) {
-            return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+            return NextResponse.json({error: 'Invoice not found'},
+                {status: 404});
         }
 
         return NextResponse.json(invoice);
     } catch (error) {
         console.error('Error fetching invoice:', error);
-        return NextResponse.json({ error: 'Failed to fetch invoice' }, { status: 500 });
+        return NextResponse.json({error: 'Failed to fetch invoice'}, {status: 500});
     }
 }
 
@@ -44,19 +50,23 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  * @param params
  * @constructor
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, {params}: { params: { id: string } }) {
+
+    if (request.method !== 'PUT') {
+        return NextResponse.json({error: 'Method not allowed'}, {status: 405});
+    }
     try {
         const body = await request.json();
-        const { userId, items, ...invoiceData } = body;
+        const {userId, items, ...invoiceData} = body;
 
-        console.log('userId in PUT:', userId);
-        console.log('items in PUT:', items);
-        console.log('invoiceData in PUT:', invoiceData);
+        if (userId === undefined || items === undefined || invoiceData === undefined) {
+            return NextResponse.json({error: 'Missing required parameters'}, {status: 400});
+        }
 
         // Validate and fetch items
         const itemDetails = await prisma.item.findMany({
             where: {
-                id: { in: items.map((item: any) => parseInt(item.itemId)) },
+                id: {in: items.map((item: any) => parseInt(item.itemId))},
                 itemStatus: 'ACTIVE',
             },
             include: {
@@ -65,22 +75,23 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         });
 
         if (itemDetails.length !== items.length) {
-            return NextResponse.json({ error: 'Some items are inactive or not found' }, { status: 400 });
+            return NextResponse.json({error: 'Some items are inactive or not found'}, {status: 400});
         }
+
 
         // Update invoice and recreate invoice details
         const invoice = await prisma.invoice.update({
-            where: { id: parseInt(params.id) },
+            where: {id: parseInt(params.id)},
             data: {
                 ...invoiceData,
-                User: { connect: { id: userId } },
+                User: {connect: {id: userId}},
                 invoiceDetails: {
                     deleteMany: {}, // Remove existing invoice details
                     create: items.map((item: any, index: number) => {
                         const itemDetail = itemDetails.find((i) => i.id === parseInt(item.itemId));
                         if (!itemDetail) throw new Error('Item not found');
                         return {
-                            item: { connect: { id: itemDetail.id } },
+                            item: {connect: {id: itemDetail.id}},
                             quantity: item.quantity,
                             discount: item.discount,
                             lineNumber: index + 1,
@@ -106,6 +117,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         let totalAmount = 0;
         let totalVatAmount = 0;
 
+        if (invoice.invoiceDetails.length === 0) {
+            return NextResponse.json({error: 'No invoice details found'}, {status: 400});
+        }
+
         invoice.invoiceDetails.forEach((detail) => {
             const unitPrice = detail.item.retailPrice.toNumber();
             const vatRate = detail.item.vat.vatPercent.toNumber() / 100;
@@ -118,7 +133,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
         // Update totals in the invoice
         const updatedInvoice = await prisma.invoice.update({
-            where: { id: invoice.id },
+            where: {id: invoice.id},
             data: {
                 totalAmount,
                 totalVatAmount,
@@ -126,10 +141,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             },
         });
 
-        return NextResponse.json(updatedInvoice);
+        if (updatedInvoice === null) {
+            return NextResponse.json({error: 'Failed to update invoice'}, {status: 500});
+        }
+        return NextResponse.json(updatedInvoice, {status: 200});
     } catch (error) {
         console.error('Error updating invoice:', error);
-        return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 });
+        return NextResponse.json({error: 'Failed to update invoice'}, {status: 500});
     }
 }
 
@@ -139,15 +157,20 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
  * @param params
  * @constructor
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, {params}: { params: { id: string } }) {
+
+    if (request.method !== 'DELETE') {
+        return NextResponse.json({error: 'Method not allowed'}, {status: 405});
+    }
+
     try {
         await prisma.invoice.delete({
-            where: { id: parseInt(params.id) },
+            where: {id: parseInt(params.id)},
         });
 
-        return NextResponse.json({ message: 'Invoice deleted successfully' });
+        return NextResponse.json({message: 'Invoice deleted successfully'}, {status: 200});
     } catch (error) {
         console.error('Error deleting invoice:', error);
-        return NextResponse.json({ error: 'Failed to delete invoice' }, { status: 500 });
+        return NextResponse.json({error: 'Failed to delete invoice'}, {status: 500});
     }
 }

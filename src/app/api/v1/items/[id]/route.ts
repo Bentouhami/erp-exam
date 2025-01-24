@@ -88,6 +88,10 @@ export async function PUT(request: NextRequest, {params}: { params: { id: string
  * DELETE an item by ID
  */
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+
+    if (request.method !== 'DELETE') {
+        return new Response('Method not allowed', {status: 405});
+    }
     try {
         const itemId = parseInt(params.id);
 

@@ -3,6 +3,8 @@ import {NextRequest, NextResponse} from 'next/server';
 import prisma from '@/lib/db';
 
 export async function GET(req: NextRequest, {params}: { params: { role: string } }) {
+    if(req.method !== 'GET') return NextResponse.json({error: "Method not allowed."}, {status : 405})
+
     try {
         const userRole = params.role; // Extract the role from the URL
 
@@ -59,7 +61,7 @@ export async function GET(req: NextRequest, {params}: { params: { role: string }
             role: user.role || '',
         }));
 
-        return NextResponse.json(sanitizedUsers);
+        return NextResponse.json(sanitizedUsers, {status : 200});
     } catch (error) {
         console.error('Error fetching users:', error);
         return NextResponse.json({error: 'Failed to fetch users'}, {status: 500});

@@ -1,66 +1,78 @@
-// path: src/services/backend_Services/Bk_InvoiceService.ts
-
+// src/services/backend_Services/Bk_InvoiceService.ts
 import prisma from '@/lib/db';
 
-// Define the type for the summary object
-type MonthlySummary = {
-    [date: string]: {
+type PeriodSummary = {
+    [period: string]: {
         totalAmount: number;
         totalTtcAmount: number;
     };
 };
 
-/**
- * Fetches the daily summary of invoices
- */
-export async function getMonthlyInvoiceSummary() {
-    const dailySummary = await prisma.invoice.groupBy({
-        by: ['issuedAt'],
-        _sum: {
-            totalAmount: true,
-            totalTtcAmount: true,
-        },
-        orderBy: {
-            issuedAt: 'asc',
-        },
-    });
+type CustomerPeriodSummary = {
+    [period: string]: {
+        totalCustomers: number;
+    };
+};
 
-    // Initialize the accumulator with the correct type
-    const summaryByDay: MonthlySummary = dailySummary.reduce((acc, item) => {
-        const date = item.issuedAt.toISOString().split('T')[0]; // Format YYYY-MM-DD
-        acc[date] = {
-            totalAmount: item._sum.totalAmount?.toNumber() || 0,
-            totalTtcAmount: item._sum.totalTtcAmount?.toNumber() || 0,
+// Generic function for invoice summaries
+async function getInvoiceSummary(period: 'month' | 'week') {
+    const dateFormat = period === 'month' ? 'YYYY-MM' : 'IYYY"-W"IW';
+    const groupBy = period === 'month' ? 'month' : 'week';
+
+    const result: any[] = await prisma.$queryRaw`
+        SELECT
+            to_char("issuedAt", ${dateFormat}) as period,
+            SUM("totalAmount") as "totalAmount",
+            SUM("totalTtcAmount") as "totalTtcAmount"
+        FROM "invoices"
+        GROUP BY period
+        ORDER BY period
+    `;
+
+    return result.reduce((acc: PeriodSummary, row) => {
+        acc[row.period] = {
+            totalAmount: Number(row.totalAmount),
+            totalTtcAmount: Number(row.totalTtcAmount)
         };
         return acc;
-    }, {} as MonthlySummary);
-
-    return summaryByDay;
+    }, {});
 }
 
-/**
- * Fetches the daily summary of customers
- */
-export async function getMonthlyCustomersSummary() {
-    const dailySummary = await prisma.user.groupBy({
-        by: ['createdAt'],
-        where: {
-            role: 'CUSTOMER',
-        },
-        _count: {
-            id: true,
-        },
-        orderBy: {
-            createdAt: 'asc',
-        },
-    });
+// Generic function for customer summaries
+async function getCustomerSummary(period: 'month' | 'week') {
+    const dateFormat = period === 'month' ? 'YYYY-MM' : 'IYYY"-W"IW';
 
-    const summaryByDay = dailySummary.reduce((acc, item) => {
-        const date = item.createdAt.toISOString().split('T')[0]; // Format YYYY-MM-DD
-        acc[date] = { totalCustomers: item._count.id };
+    const result: any[] = await prisma.$queryRaw`
+        SELECT
+            to_char("createdAt", ${dateFormat}) as period,
+            COUNT("id") as "totalCustomers"
+        FROM "users"
+        WHERE "role" = 'CUSTOMER'
+        GROUP BY period
+        ORDER BY period
+    `;
+
+    return result.reduce((acc: CustomerPeriodSummary, row) => {
+        acc[row.period] = {
+            totalCustomers: Number(row.totalCustomers)
+        };
         return acc;
-    }, {} as { [date: string]: { totalCustomers: number } });
-
-    return summaryByDay;
+    }, {});
 }
 
+// Updated service functions
+export async function getMonthlyInvoiceSummary() {
+    return getInvoiceSummary('month');
+}
+
+export async function getWeeklyInvoiceSummary() {
+    return getInvoiceSummary('week');
+}
+
+export async function getMonthlyCustomersSummary() {
+    return getCustomerSummary('month');
+}
+
+export async function getWeeklyCustomersSummary() {
+    return getCustomerSummary('week');
+}

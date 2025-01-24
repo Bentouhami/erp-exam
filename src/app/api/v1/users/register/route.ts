@@ -1,3 +1,5 @@
+// path: src/app/api/v1/users/register/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { TokenTypeDTO } from "@/services/dtos/UserDtos";
@@ -11,6 +13,8 @@ import {
 import {generateUserToken} from "@/services/auth/TokenService";
 
 export async function POST(req: NextRequest) {
+    if( req.method !== 'POST') return NextResponse.json({error: "Method not allowed."}, {status: 405})
+
     try {
         const userData = await req.json();
 

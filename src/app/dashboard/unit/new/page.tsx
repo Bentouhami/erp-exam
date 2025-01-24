@@ -5,13 +5,14 @@
 
 import { useRouter } from 'next/navigation';
 import NewUnitForm from '@/components/NewUnitForm';
+import {API_DOMAIN, DOMAIN} from "@/lib/utils/constants";
 
 export default function NewUnitPage() {
     const router = useRouter();
 
     const handleSubmit = async (data: { name: string }) => {
         try {
-            const response = await fetch('/api/v1/units', {
+            const response = await fetch(`${API_DOMAIN}/units`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
@@ -21,7 +22,7 @@ export default function NewUnitPage() {
                 throw new Error('Failed to create unit');
             }
 
-            router.push('/dashboard/unit'); // Redirect to the unit list page
+            router.push(`${DOMAIN}/dashboard/unit`); // Redirect to the unit list page
         } catch (error) {
             console.error('Error submitting unit:', error);
         }

@@ -20,10 +20,13 @@ export async function GET() {
             return acc;
         }, {} as { [month: string]: { totalAmount: number; totalTtcAmount: number; totalCustomers: number } });
 
+        if (!combinedData) return NextResponse.json({error: "No data found!"}, {status: 404})
+
         return NextResponse.json(
             combinedData,
             {
-                status: 200, headers: {
+                status: 200,
+                headers: {
                     'Cache-Control': 'no-store, max-age=0'
                 }
             }
@@ -42,4 +45,6 @@ export async function GET() {
         );
     }
 }
+
+export const dynamic = "force-dynamic"
 

@@ -1,7 +1,7 @@
-// path: src/components/charts/RevenueChart.tsx
-
+// src/components/charts/RevenueChart.tsx
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { formatAxisDate } from '@/lib/utils/dateUtils';
 
 interface ChartData {
     name: string;
@@ -10,33 +10,61 @@ interface ChartData {
 
 interface RevenueChartProps {
     data: ChartData[];
+    timeRange: 'month' | 'week';
 }
 
-export function RevenueChart({ data }: RevenueChartProps) {
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white p-3 rounded-lg shadow-md border">
+                <p className="font-semibold mb-2">{label}</p>
+                <p className="text-sm text-[#82ca9d]">
+                    Revenue: <span className="font-medium">${payload[0].value.toFixed(2)}</span>
+                </p>
+            </div>
+        );
+    }
+    return null;
+};
+
+export function RevenueChart({ data, timeRange }: RevenueChartProps) {
     return (
-        <div className="bg-white p-4 rounded-lg shadow hover:bg-yellow-50">
+        <div className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300">
             <h3 className="text-lg font-semibold mb-4">Revenue Over Time</h3>
             <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line
+                    <AreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <defs>
+                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.2}/>
+                                <stop offset="95%" stopColor="#82ca9d" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
+                        <XAxis
+                            dataKey="name"
+                            tickFormatter={(date) => formatAxisDate(date, timeRange)}
+                            tick={{ fill: '#666' }}
+                        />
+                        <YAxis
+                            tickFormatter={(value) => `$${value.toFixed(0)}`}
+                            tick={{ fill: '#666' }}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                        <Area
                             type="monotone"
                             dataKey="revenue"
                             name="Total Revenue"
                             stroke="#82ca9d"
                             strokeWidth={2}
-                            dot={{ stroke: '#82ca9d', strokeWidth: 2, r: 4 }}
+                            fill="url(#revenueGradient)"
                             activeDot={{ r: 8 }}
+                            animationDuration={300}
                         />
-                    </LineChart>
+                    </AreaChart>
                 </ResponsiveContainer>
             </div>
         </div>
     );
 }
-

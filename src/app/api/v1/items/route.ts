@@ -15,6 +15,10 @@ const validateItemData = (data: any) => {
 };
 
 export async function GET(request: NextRequest) {
+
+    if (request.method !== 'GET') {
+        return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
+    }
     const search = request.nextUrl.searchParams.get('search');
     const sort = request.nextUrl.searchParams.get('sort') || 'itemNumber';
     const order = request.nextUrl.searchParams.get('order') || 'asc';
@@ -59,6 +63,10 @@ export async function GET(request: NextRequest) {
     }
 }
 export async function POST(request: NextRequest) {
+    if (request.method !== 'POST') {
+        return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
+    }
+
     try {
         const body = await request.json();
 

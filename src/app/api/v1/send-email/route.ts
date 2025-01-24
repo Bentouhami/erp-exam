@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
             `,
         });
 
-        return NextResponse.json({message: 'Email sent successfully'});
+        return NextResponse.json({message: 'Email sent successfully'}, {status : 200});
     } catch (error) {
         console.error('Error sending verification email:', error);
         return NextResponse.json({error: 'Failed to send email'}, {status: 500});

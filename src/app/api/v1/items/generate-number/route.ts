@@ -4,6 +4,11 @@ import {NextRequest, NextResponse} from 'next/server';
 import {generateItemNumber} from '@/lib/utils/item';
 
 export async function GET(req: NextRequest) {
+
+    if (req.method !== 'GET') {
+        return new Response('Method not allowed', {status: 405});
+    }
+
     try {
         const itemNumber = await generateItemNumber();
         if (!itemNumber) {

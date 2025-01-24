@@ -8,7 +8,6 @@ import prisma from "@/lib/db";
  * @desc Verify email
  */
 export async function POST(req: NextRequest) {
-    console.log("log ====> Verification email API route called");
 
     if (req.method !== "POST") {
         return NextResponse.json({ message: "Method not allowed" }, { status: 405 });

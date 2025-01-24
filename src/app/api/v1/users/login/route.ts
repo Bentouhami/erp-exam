@@ -4,6 +4,8 @@ import prisma from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
+
+    if(req.method !== 'POST') return NextResponse.json({error: "Method not allowed."}, {status: 405})
     try {
         // 1. Parse the request body
         const { email, password } = await req.json();

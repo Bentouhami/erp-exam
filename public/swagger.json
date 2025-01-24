@@ -4,13 +4,50 @@
     "title": "Test API",
     "version": "1.0.0"
   },
+  "tags": [
+    {
+      "name": "Users",
+      "description": "User management and authentication operations"
+    },
+    {
+      "name": "Dashboard",
+      "description": "Dashboard statistics and metrics"
+    },
+    {
+      "name": "Invoices",
+      "description": "Invoice management operations"
+    },
+    {
+      "name": "Items",
+      "description": "Inventory item management"
+    },
+    {
+      "name": "Vats",
+      "description": "VAT type management"
+    },
+    {
+      "name": "ItemClasses",
+      "description": "Item classification management"
+    },
+    {
+      "name": "ItemTaxes",
+      "description": "Item tax management"
+    },
+    {
+      "name": "Units",
+      "description": "Unit of measurement management"
+    }
+  ],
   "paths": {
     "/api/v1/users": {
       "get": {
-        "summary": "Get All users",
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get all users",
         "responses": {
           "200": {
-            "description": "Lit of users",
+            "description": "List of users",
             "content": {
               "application/json": {
                 "schema": {
@@ -23,26 +60,60 @@
             }
           },
           "400": {
-            "description": "Bad Request"
+            "$ref": "#/components/responses/400"
           },
           "401": {
-            "description": "Unauthorized"
+            "$ref": "#/components/responses/401"
           },
           "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not Found"
+            "$ref": "#/components/responses/403"
           },
           "500": {
-            "description": "Internal Server Error"
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete user by query ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       }
     },
     "/api/v1/users/{id}": {
       "get": {
-        "summary": "Get user by id",
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get user by ID",
         "parameters": [
           {
             "name": "id",
@@ -55,7 +126,72 @@
         ],
         "responses": {
           "200": {
-            "description": "User",
+            "description": "User details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update user",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "role": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "email",
+                  "role"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User updated successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -65,19 +201,994 @@
             }
           },
           "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
+            "$ref": "#/components/responses/400"
           },
           "404": {
-            "description": "Not Found"
+            "$ref": "#/components/responses/404"
           },
           "500": {
-            "description": "Internal Server Error"
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete user by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/users/login": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Authenticate user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/users/register": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Register new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "409": {
+            "description": "Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/users/role/{role}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get users by role",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users filtered by role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserExtended"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/users/verify": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Verify user email",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/monthly-summary": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get monthly summary statistics",
+        "description": "Returns combined monthly invoice and customer statistics",
+        "responses": {
+          "200": {
+            "description": "Monthly summary data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/MonthlySummaryItem"
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "no-store, max-age=0"
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/weekly-summary": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get weekly summary statistics",
+        "description": "Returns combined weekly invoice and customer statistics",
+        "responses": {
+          "200": {
+            "description": "Weekly summary data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/WeeklySummaryItem"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/invoices": {
+      "get": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Get all invoices",
+        "description": "Retrieves a list of invoices with optional search and sorting",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search term for invoice number or user details",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Field to sort by (default: issuedAt)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort order (default: desc)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of invoices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Invoice"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Create a new invoice",
+        "description": "Creates a new invoice with associated items and calculates totals",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Invoice created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/invoices/generate-number": {
+      "get": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Generate a unique invoice number",
+        "description": "Generates a unique invoice number with retry logic",
+        "responses": {
+          "200": {
+            "description": "Generated invoice number",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invoiceNumber": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "no-store, max-age=0"
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/invoices/{id}": {
+      "get": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Get invoice by ID",
+        "description": "Retrieves a specific invoice with details and user information",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Update invoice by ID",
+        "description": "Updates an existing invoice and recalculates totals",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoice updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Delete invoice by ID",
+        "description": "Deletes a specific invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/invoices/{id}/toggle-accounting": {
+      "patch": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Toggle accounting flag",
+        "description": "Toggles the accounting flag for a specific invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accounting flag toggled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/items": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Get all items",
+        "description": "Retrieves a list of items with optional search and sorting",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search term for item number or label",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Field to sort by (default: itemNumber)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort order (default: asc)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Item"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Create a new item",
+        "description": "Creates a new inventory item",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/items/{id}": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Get item by ID",
+        "description": "Retrieves a specific item with details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Update item by ID",
+        "description": "Updates an existing item",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Delete item by ID",
+        "description": "Deletes a specific item if it is not referenced in any invoices",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/items/generate-number": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Generate a unique item number",
+        "description": "Generates a unique item number",
+        "responses": {
+          "200": {
+            "description": "Generated item number",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "itemNumber": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "no-store, max-age=0"
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/vats": {
+      "get": {
+        "tags": [
+          "Vats"
+        ],
+        "summary": "Get VAT types",
+        "description": "Retrieves a list of VAT types, optionally filtered by country ID",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "query",
+            "description": "Filter VAT types by country ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of VAT types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "vatTypes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Vat"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/item-classes": {
+      "get": {
+        "tags": [
+          "ItemClasses"
+        ],
+        "summary": "Get all item classes",
+        "description": "Retrieves a list of item classes",
+        "responses": {
+          "200": {
+            "description": "List of item classes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemClass"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/item-taxes": {
+      "get": {
+        "tags": [
+          "ItemTaxes"
+        ],
+        "summary": "Get all item taxes",
+        "description": "Retrieves a list of item taxes with their labels",
+        "responses": {
+          "200": {
+            "description": "List of item taxes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "taxes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ItemTaxLabel"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/api/v1/units": {
+      "get": {
+        "tags": [
+          "Units"
+        ],
+        "summary": "Get all units",
+        "description": "Retrieves a list of units of measurement",
+        "responses": {
+          "200": {
+            "description": "List of units",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "units": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Unit"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       }
@@ -100,14 +1211,19 @@
           "lastName": {
             "type": "string"
           },
-          "email": {
+          "name": {
             "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
           },
           "role": {
             "type": "string"
           },
           "vatNumber": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "createdAt": {
             "type": "string",
@@ -115,36 +1231,625 @@
           }
         }
       },
-        "Error": {
+      "UserExtended": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/User"
+          },
+          {
             "type": "object",
             "properties": {
-            "message": {
-                "type": "string"
+              "isEnabled": {
+                "type": "boolean"
+              },
+              "isVerified": {
+                "type": "boolean"
+              },
+              "isEnterprise": {
+                "type": "boolean"
+              },
+              "phone": {
+                "type": "string",
+                "nullable": true
+              },
+              "companyName": {
+                "type": "string",
+                "nullable": true
+              },
+              "companyNumber": {
+                "type": "string",
+                "nullable": true
+              },
+              "exportNumber": {
+                "type": "string",
+                "nullable": true
+              },
+              "lastLogin": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
             }
-            }
+          }
+        ]
+      },
+      "UserCreate": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "isEnterprise": {
+            "type": "boolean"
+          },
+          "companyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "vatNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "companyNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "exportNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "mobile": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentTermDays": {
+            "type": "integer",
+            "nullable": true
+          }
         },
-        "ValidationError": {
-            "type": "object",
-            "properties": {
-            "message": {
-                "type": "string"
-            },
-            "errors": {
-                "type": "array",
-                "items": {
-                "type": "object",
-                "properties": {
-                    "field": {
-                    "type": "string"
-                    },
-                    "message": {
-                    "type": "string"
-                    }
-                }
-                }
-            }
-            }
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "role"
+        ]
+      },
+      "SuccessMessage": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
         }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "MonthlySummaryItem": {
+        "type": "object",
+        "properties": {
+          "totalAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalTtcAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalCustomers": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "totalAmount",
+          "totalTtcAmount",
+          "totalCustomers"
+        ]
+      },
+      "WeeklySummaryItem": {
+        "type": "object",
+        "properties": {
+          "totalAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalTtcAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalCustomers": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "totalAmount",
+          "totalTtcAmount",
+          "totalCustomers"
+        ]
+      },
+      "Invoice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalVatAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalTtcAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "flag_accounting": {
+            "type": "boolean"
+          },
+          "User": {
+            "$ref": "#/components/schemas/User"
+          },
+          "invoiceDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceDetail"
+            }
+          }
+        }
+      },
+      "InvoiceDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "lineNumber": {
+            "type": "integer"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "discount": {
+            "type": "number",
+            "format": "float"
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "vatBaseAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "vatAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "item": {
+            "$ref": "#/components/schemas/Item"
+          }
+        }
+      },
+      "InvoiceCreate": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceItemCreate"
+            }
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "userId",
+          "items",
+          "issuedAt"
+        ]
+      },
+      "InvoiceItemCreate": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "discount": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "required": [
+          "itemId",
+          "quantity"
+        ]
+      },
+      "InvoiceUpdate": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceItemCreate"
+            }
+          }
+        },
+        "required": [
+          "userId",
+          "items"
+        ]
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "itemNumber": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "retailPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "purchasePrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "stockQuantity": {
+            "type": "integer"
+          },
+          "minQuantity": {
+            "type": "integer"
+          },
+          "vat": {
+            "$ref": "#/components/schemas/Vat"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "itemClass": {
+            "$ref": "#/components/schemas/ItemClass"
+          },
+          "itemTaxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemTax"
+            }
+          }
+        }
+      },
+      "ItemCreate": {
+        "type": "object",
+        "properties": {
+          "itemNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "retailPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "purchasePrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "stockQuantity": {
+            "type": "integer"
+          },
+          "minQuantity": {
+            "type": "integer"
+          },
+          "vatId": {
+            "type": "integer"
+          },
+          "unitId": {
+            "type": "integer"
+          },
+          "classId": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "retailPrice",
+          "purchasePrice",
+          "vatId",
+          "unitId",
+          "classId"
+        ]
+      },
+      "ItemUpdate": {
+        "type": "object",
+        "properties": {
+          "itemNumber": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "retailPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "purchasePrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "vatId": {
+            "type": "integer"
+          },
+          "unitId": {
+            "type": "integer"
+          },
+          "classId": {
+            "type": "integer"
+          },
+          "itemTaxes": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "label",
+          "retailPrice",
+          "purchasePrice",
+          "vatId",
+          "unitId",
+          "classId"
+        ]
+      },
+      "Vat": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "vatPercent": {
+            "type": "number",
+            "format": "float"
+          },
+          "vatType": {
+            "type": "string"
+          },
+          "country": {
+            "$ref": "#/components/schemas/Country"
+          }
+        }
+      },
+      "Country": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "countryCode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ItemTax": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "itemId": {
+            "type": "integer"
+          },
+          "taxId": {
+            "type": "integer"
+          },
+          "price": {
+            "type": "number",
+            "format": "float"
+          },
+          "utax": {
+            "$ref": "#/components/schemas/Utax"
+          }
+        }
+      },
+      "Utax": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "ItemClass": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "label": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          }
+        }
+      },
+      "ItemTaxLabel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "Unit": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "400": {
+        "description": "Bad Request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "Forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Not Found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -83,13 +83,13 @@ export default function UsersList({role}: UsersListProps) {
 // State to manage visible columns
     const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
         userNumber: true,
-        firstName: true,
-        lastName: true,
+        firstName: false,
+        lastName: false,
         name: true,
         role: true,
         email: true,
-        phone: true,
-        vatNumber: true,
+        phone: false,
+        vatNumber: false,
         isEnterprise: false,
         isVerified: false,
         isEnabled: false,

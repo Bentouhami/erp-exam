@@ -3,12 +3,17 @@ import {type NextRequest, NextResponse} from "next/server"
 import {generateInvoiceNumber} from "@/lib/utils/invoice"
 
 export async function GET(req: NextRequest) {
+
+    if (req.method !== 'GET') {
+        return NextResponse.json({error: 'Method not allowed'}, {status: 405});
+    }
+
+    // instantiate retries with a maximum of 3 retries with a delay of 100 milliseconds between each retry attempt
     let retries = 3
     while (retries > 0) {
         try {
             const invoiceNumber = await generateInvoiceNumber()
             if (!invoiceNumber) {
-                console.error("Invoice number generation failed")
                 return NextResponse.json(
                     {message: "Invoice number not found"},
                     {
@@ -19,7 +24,6 @@ export async function GET(req: NextRequest) {
                     },
                 )
             }
-            console.log(`Generated invoice number: ${invoiceNumber}`)
             return NextResponse.json(
                 {invoiceNumber},
                 {

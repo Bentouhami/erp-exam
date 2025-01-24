@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     Home, FileText, Users, Package, Settings, ChevronLeft, ChevronRight, Menu,
-    Sun, Moon, Laptop, Bell, LogOut
+    Sun, Moon, Laptop, Bell, LogOut, LogIn
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -122,68 +122,89 @@ const Sidebar = () => {
                     </Button>
                 </div>
 
-                {/* User Profile Section */}
+                {/* User Profile Section or Login Prompt */}
                 <div className={cn(
                     "p-6 border-b",
                     isCollapsed ? "flex justify-center" : ""
                 )}>
-                    <div className={cn(
-                        "flex items-center space-x-4",
-                        isCollapsed && "flex-col space-x-0 space-y-2"
-                    )}>
-                        <Avatar className="h-10 w-10 border-2 border-primary/20">
-                            <AvatarImage src={session?.user?.image || undefined} />
-                            <AvatarFallback>
-                                {session?.user?.name?.[0] || 'U'}
-                            </AvatarFallback>
-                        </Avatar>
-                        {!isCollapsed && (
-                            <div className="space-y-1">
-                                <h2 className="text-sm font-semibold">{session?.user?.name || 'User'}</h2>
-                                <p className="text-xs text-muted-foreground capitalize">
-                                    {session?.user?.role?.toLowerCase()}
-                                </p>
+                    {session ? (
+                        <div className={cn(
+                            "flex items-center space-x-4",
+                            isCollapsed && "flex-col space-x-0 space-y-2"
+                        )}>
+                            <Avatar className="h-10 w-10 border-2 border-primary/20">
+                                <AvatarImage src={session?.user?.image || undefined} />
+                                <AvatarFallback>
+                                    {session?.user?.name?.[0] || 'U'}
+                                </AvatarFallback>
+                            </Avatar>
+                            {!isCollapsed && (
+                                <div className="space-y-1">
+                                    <h2 className="text-sm font-semibold">{session?.user?.name || 'User'}</h2>
+                                    <p className="text-xs text-muted-foreground capitalize">
+                                        {session?.user?.role?.toLowerCase()}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className={cn(
+                            "flex items-center space-x-4",
+                            isCollapsed && "flex-col space-x-0 space-y-2"
+                        )}>
+                            <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary/10">
+                                <LogIn size={20} className="text-primary" />
                             </div>
-                        )}
-                    </div>
+                            {!isCollapsed && (
+                                <div className="space-y-1">
+                                    <h2 className="text-sm font-semibold">Welcome!</h2>
+                                    <p className="text-xs text-muted-foreground">
+                                        Please log in to continue.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
-                {/* Navigation Links */}
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-none">
-                    {filteredMenuItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname.startsWith(item.path);
+                {/* Navigation Links (Only show if logged in) */}
+                {session && (
+                    <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-none">
+                        {filteredMenuItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname.startsWith(item.path);
 
-                        return (
-                            <Link
-                                key={item.name}
-                                href={item.path}
-                                onClick={toggleMobileSidebar}
-                            >
-                                <Button
-                                    variant={isActive ? 'secondary' : 'ghost'}
-                                    className={cn(
-                                        'w-full group relative',
-                                        isCollapsed ? 'justify-center' : 'justify-start',
-                                        'hover:bg-secondary transition-all duration-200',
-                                        isActive && 'font-semibold'
-                                    )}
+                            return (
+                                <Link
+                                    key={item.name}
+                                    href={item.path}
+                                    onClick={toggleMobileSidebar}
                                 >
-                                    <Icon size={20} className={cn(
-                                        "transition-transform duration-200",
-                                        isActive ? "text-primary" : "text-muted-foreground",
-                                        "group-hover:scale-110"
-                                    )} />
-                                    {!isCollapsed && (
-                                        <span className="ml-3">{item.name}</span>
-                                    )}
-                                </Button>
-                            </Link>
-                        );
-                    })}
-                </nav>
+                                    <Button
+                                        variant={isActive ? 'secondary' : 'ghost'}
+                                        className={cn(
+                                            'w-full group relative',
+                                            isCollapsed ? 'justify-center' : 'justify-start',
+                                            'hover:bg-secondary transition-all duration-200',
+                                            isActive && 'font-semibold'
+                                        )}
+                                    >
+                                        <Icon size={20} className={cn(
+                                            "transition-transform duration-200",
+                                            isActive ? "text-primary" : "text-muted-foreground",
+                                            "group-hover:scale-110"
+                                        )} />
+                                        {!isCollapsed && (
+                                            <span className="ml-3">{item.name}</span>
+                                        )}
+                                    </Button>
+                                </Link>
+                            );
+                        })}
+                    </nav>
+                )}
 
-                {/* Theme Toggle & Logout */}
+                {/* Theme Toggle & Logout/Login */}
                 <div className="p-4 border-t space-y-4">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -215,17 +236,31 @@ const Sidebar = () => {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <Button
-                        variant="ghost"
-                        className={cn(
-                            "w-full hover:bg-destructive/10 hover:text-destructive",
-                            isCollapsed ? "justify-center" : "justify-start"
-                        )}
-                        onClick={() => signOut({ callbackUrl: '/auth' })}
-                    >
-                        <LogOut size={20} />
-                        {!isCollapsed && <span className="ml-3">Logout</span>}
-                    </Button>
+                    {session ? (
+                        <Button
+                            variant="ghost"
+                            className={cn(
+                                "w-full hover:bg-destructive/10 hover:text-destructive",
+                                isCollapsed ? "justify-center" : "justify-start"
+                            )}
+                            onClick={() => signOut({ redirectTo: '/' })}
+                        >
+                            <LogOut size={20} />
+                            {!isCollapsed && <span className="ml-3">Logout</span>}
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="ghost"
+                            className={cn(
+                                "w-full hover:bg-primary/10 hover:text-primary",
+                                isCollapsed ? "justify-center" : "justify-start"
+                            )}
+                            onClick={() => router.push('/auth')}
+                        >
+                            <LogIn size={20} />
+                            {!isCollapsed && <span className="ml-3">Log in</span>}
+                        </Button>
+                    )}
                 </div>
             </div>
 

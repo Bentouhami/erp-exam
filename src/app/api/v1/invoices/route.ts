@@ -5,6 +5,11 @@ import prisma from '@/lib/db';
 import {generateInvoiceNumber} from "@/lib/utils/invoice";
 
 export async function GET(request: NextRequest) {
+
+    if (request.method !== 'GET') {
+        return new Response('Method not allowed', {status: 405});
+    }
+    // get search params from url
     const {searchParams} = new URL(request.url);
     const search = searchParams.get('search');
     const sort = searchParams.get('sort') || 'issuedAt';
@@ -40,14 +45,7 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        // // Decrypt sensitive fields before sending them to the client
-        // invoices.forEach((invoice) => {
-        //     if (invoice.User?.name) {
-        //         invoice.User.name = decrypt(invoice.User.name);
-        //     }
-        // });
-
-        return NextResponse.json(invoices);
+        return NextResponse.json(invoices, {status: 200});
     } catch (error) {
         console.error('Error fetching invoices:', error);
         return NextResponse.json({error: 'Failed to fetch invoices'}, {status: 500});
@@ -149,6 +147,10 @@ export async function POST(request: NextRequest) {
                 },
             },
         });
+
+        if(!invoice) {
+            return NextResponse.json({error: 'Failed to create invoice'}, {status: 500});
+        }
 
         return NextResponse.json(invoice, {status: 201});
     } catch (error) {

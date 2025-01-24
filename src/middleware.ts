@@ -15,7 +15,7 @@
 //     if (!token && !isPublicPath && !isStaticAsset) {
 //         // Redirect to login if no token and not on a public or static asset path
 //         const loginUrl = new URL(`${DOMAIN}/auth`, req.url);
-//         loginUrl.searchParams.set('callbackUrl', req.url); // Preserve the original URL for redirect after login
+//         loginUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
 //         return NextResponse.redirect(loginUrl);
 //     }
 //
