@@ -1,11 +1,11 @@
 // path: src/components/LoginForm.tsx
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from 'lucide-react';
-import { signIn } from "next-auth/react"; // Correct import
+import React, {useState} from "react";
+import {useRouter} from "next/navigation";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {Eye, EyeOff} from 'lucide-react';
+import {signIn} from "next-auth/react"; // Correct import
 
 export function LoginForm() {
     const [email, setEmail] = useState("");
@@ -27,8 +27,7 @@ export function LoginForm() {
         if (result?.error) {
             setError("Invalid email or password");
         } else {
-            console.log("Login successful, lastLogin updated");
-            router.push("/dashboard");
+            router.push("/");
         }
     };
 
@@ -60,12 +59,11 @@ export function LoginForm() {
                         variant="ghost"
                         size="icon"
                         className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
-                        onClick={() => setShowPassword(!showPassword)}
-                    >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
                         <span className="sr-only">
-              {showPassword ? "Hide password" : "Show password"}
-            </span>
+                            {showPassword ? "Hide password" : "Show password"}
+                        </span>
                     </Button>
                 </div>
             </div>

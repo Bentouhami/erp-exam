@@ -1,3 +1,5 @@
+// path: src/app/dashboard/users/page.tsx
+
 'use client';
 
 import UsersList from "@/components/lists/UsersList";
@@ -8,6 +10,7 @@ import {useRouter} from "next/navigation";
 import {Button} from "@/components/ui/button";
 import {Plus} from "lucide-react";
 import {accessControlHelper} from "@/lib/utils/accessControlHelper";
+import {DOMAIN} from "@/lib/utils/constants";
 
 export default function UsersPage() {
     const {data: session, status} = useSession();
@@ -21,7 +24,7 @@ export default function UsersPage() {
     }, [status, session]);
 
     const handleAddUser = () => {
-        router.push('/dashboard/users/new');
+        router.push(`${DOMAIN}/dashboard/users/new`);
     };
 
     // Don't render anything while checking authentication
@@ -31,7 +34,7 @@ export default function UsersPage() {
 
     // Check access control after authentication is confirmed
     if (status === 'authenticated' && !accessControlHelper.canManageUsers(session)) {
-        router.replace('/dashboard');
+        router.replace('/');
         return null;
     }
 

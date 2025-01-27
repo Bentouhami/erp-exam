@@ -1,3 +1,5 @@
+// path: src/components/lists/UsersList.tsx
+
 import React, {useEffect, useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
@@ -14,7 +16,7 @@ import {ArrowUpDown, ChevronDown, MoreHorizontal} from 'lucide-react';
 import {toast} from 'react-toastify';
 import {ListSkeleton} from "@/components/skeletons/ListSkeleton";
 import axios from "axios";
-import {API_DOMAIN} from "@/lib/utils/constants";
+import {API_DOMAIN, DOMAIN} from "@/lib/utils/constants";
 import {format} from 'date-fns';
 
 type User = {
@@ -189,7 +191,7 @@ export default function UsersList({role}: UsersListProps) {
 
     // Handle edit action
     const handleEdit = (userId: string) => {
-        router.push(`/users/${userId}/edit`);
+        router.push(`${DOMAIN}/dashboard/users/${userId}/edit`);
     };
 
     // Handle delete action
@@ -226,26 +228,25 @@ export default function UsersList({role}: UsersListProps) {
 
     // Apply filters and search term whenever filters or search term change
     useEffect(() => {
-        const filtered = applyFilters(users).filter((user) => {
-            const searchFields = [
-                user.userNumber,
-                user.firstName,
-                user.lastName,
-                user.name,
-                user.role,
-                user.email,
-                user.phone,
-                user.vatNumber,
-                user.companyName,
-                user.companyNumber,
-                user.exportNumber,
-            ].join(' ').toLowerCase();
-
-            return searchFields.includes(searchTerm.toLowerCase());
+        const filtered = users.filter(user => {
+            const searchLower = searchTerm.toLowerCase();
+            return (
+                user.userNumber?.toLowerCase().includes(searchLower) ||
+                user.firstName?.toLowerCase().includes(searchLower) ||
+                user.lastName?.toLowerCase().includes(searchLower) ||
+                user.name?.toLowerCase().includes(searchLower) ||
+                user.role?.toLowerCase().includes(searchLower) ||
+                user.email?.toLowerCase().includes(searchLower) ||
+                user.phone?.toLowerCase().includes(searchLower) ||
+                user.vatNumber?.toLowerCase().includes(searchLower) ||
+                user.companyName?.toLowerCase().includes(searchLower) ||
+                user.companyNumber?.toLowerCase().includes(searchLower) ||
+                user.exportNumber?.toLowerCase().includes(searchLower)
+            );
         });
         setFilteredUsers(filtered);
         setCurrentPage(1);
-    }, [searchTerm, users, filters]);
+    }, [searchTerm, users]);
 
     if (loading) {
         return <ListSkeleton/>;
@@ -261,59 +262,10 @@ export default function UsersList({role}: UsersListProps) {
             <div className="flex flex-wrap gap-4">
                 <Input
                     type="text"
-                    placeholder="Search users..."
+                    placeholder="Search users by name, email, phone, company..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                />
-                <Input
-                    type="text"
-                    placeholder="User Number"
-                    value={filters.userNumber.trim()}
-                    onChange={(e) => handleFilterChange('userNumber', e.target.value.trim())}
-                    className="max-w-sm"
-                />
-                <Input
-                    type="text"
-                    placeholder="First Name"
-                    value={filters.firstName}
-                    onChange={(e) => handleFilterChange('firstName', e.target.value)}
-                    className="max-w-sm"
-                />
-                <Input
-                    type="text"
-                    placeholder="Last Name"
-                    value={filters.lastName}
-                    onChange={(e) => handleFilterChange('lastName', e.target.value)}
-                    className="max-w-sm"
-                />
-                <Input
-                    type="text"
-                    placeholder="Name"
-                    value={filters.name}
-                    onChange={(e) => handleFilterChange('name', e.target.value)}
-                    className="max-w-sm"
-                />
-                <Input
-                    type="text"
-                    placeholder="Role"
-                    value={filters.role}
-                    onChange={(e) => handleFilterChange('role', e.target.value)}
-                    className="max-w-sm"
-                />
-                <Input
-                    type="text"
-                    placeholder="Email"
-                    value={filters.email.trim()}
-                    onChange={(e) => handleFilterChange('email', e.target.value.trim())}
-                    className="max-w-sm"
-                />
-                <Input
-                    type="text"
-                    placeholder="Phone"
-                    value={filters.phone.trim()}
-                    onChange={(e) => handleFilterChange('phone', e.target.value.trim())}
-                    className="max-w-sm"
+                    className="max-w-xl flex-grow"
                 />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -326,7 +278,7 @@ export default function UsersList({role}: UsersListProps) {
                         {Object.keys(visibleColumns).map((column) => (
                             <DropdownMenuItem
                                 key={column}
-                                onSelect={(e) => e.preventDefault()} // Prevent menu from closing
+                                onSelect={(e) => e.preventDefault()} // Prevent a menu from closing
                             >
                                 <label className="flex items-center space-x-2">
                                     <input
@@ -536,11 +488,15 @@ export default function UsersList({role}: UsersListProps) {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuLabel>
+                                            Actions
+                                        </DropdownMenuLabel>
                                         <DropdownMenuItem
-                                            onClick={() => user.id && handleEdit(user.id)}>Edit</DropdownMenuItem>
+                                            onClick={() => user.id && handleEdit(user.id)}>Edit
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem
-                                            onClick={() => user.id && handleDelete(user.id)}>Delete</DropdownMenuItem>
+                                            onClick={() => user.id && handleDelete(user.id)}>Delete
+                                        </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>

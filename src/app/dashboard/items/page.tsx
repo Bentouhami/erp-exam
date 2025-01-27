@@ -18,7 +18,7 @@ export default function ItemsPage() {
         } else if (status === 'authenticated') {
             const canManageUsers = accessControlHelper.canManageUsers(session);
             if (!canManageUsers) {
-                router.push('/dashboard');
+                router.push('/');
             }
         }
     }, [status, session, router]);

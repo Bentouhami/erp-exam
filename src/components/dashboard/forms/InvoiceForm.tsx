@@ -117,6 +117,7 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                 // Fetch an existing invoice
                 try {
                     await fetchInvoice(invoiceId)
+
                 } catch (error) {
                     console.error("Error fetching invoice:", error)
                     toast.error("Failed to fetch invoice")

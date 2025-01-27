@@ -17,7 +17,16 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
                 firstName: true,
                 lastName: true,
                 email: true,
+                phone: true,
+                mobile: true,
+                fax: true,
+                paymentTermDays: true,
                 role: true,
+                isEnterprise: true,
+                companyName: true,
+                vatNumber: true,
+                isVerified: true,
+                isEnabled: true,
                 createdAt: true,
             },
         })
@@ -45,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     try {
         const body = await request.json()
-        const { firstName, lastName, email, role } = body
+        const { firstName, lastName, email, role, phone, mobile, fax, paymentTermDays, isEnterprise, companyName, vatNumber } = body
 
         const updatedUser = await prisma.user.update({
             where: { id: params.id },
@@ -53,8 +62,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
                 firstName,
                 lastName,
                 name: `${firstName} ${lastName}`,
-                email,
-                role,
+                email : email || '',
+                role : role || 'CUSTOMER',
+                phone : phone || '',
+                mobile : mobile || '',
+                fax :  fax || '',
+                paymentTermDays: paymentTermDays || 0,
+                isEnterprise : isEnterprise || false,
+                companyName : companyName || '',
+                vatNumber : vatNumber || '',
             },
             select: {
                 id: true,
@@ -63,7 +79,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
                 lastName: true,
                 name: true,
                 email: true,
+                phone: true,
+                mobile: true,
+                fax: true,
+                paymentTermDays: true,
                 role: true,
+                isEnterprise: true,
+                companyName: true,
+                vatNumber: true,
+                isVerified: true,
+                isEnabled: true,
                 createdAt: true,
             },
         })
