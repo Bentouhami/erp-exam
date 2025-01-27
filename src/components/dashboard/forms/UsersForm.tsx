@@ -9,20 +9,40 @@ import { Switch } from '@/components/ui/switch'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import {API_DOMAIN} from "@/lib/utils/constants";
 
-// Define the form type using Zod inference
+// Update the Zod schema to handle empty strings as null
 const userSchema = z.object({
     firstName: z.string().min(1, 'Required'),
     lastName: z.string().min(1, 'Required'),
+    name: z.string().min(1, 'Required'),
     email: z.string().email(),
     role: z.enum(['CUSTOMER', 'ADMIN', 'ACCOUNTANT', 'SUPER_ADMIN']),
     isEnterprise: z.boolean().optional(),
-    companyName: z.string().optional(),
-    vatNumber: z.string().optional(),
-    phone: z.string().optional(),
-    mobile: z.string().optional(),
-    fax: z.string().optional(),
-    paymentTermDays: z.number().optional(),
+    companyName: z.preprocess(
+        (val) => val === "" ? null : val,
+        z.string().nullable().optional()
+    ),
+    vatNumber: z.preprocess(
+        (val) => val === "" ? null : val,
+        z.string().nullable().optional()
+    ),
+    phone: z.preprocess(
+        (val) => val === "" ? null : val,
+        z.string().nullable().optional()
+    ),
+    mobile: z.preprocess(
+        (val) => val === "" ? null : val,
+        z.string().nullable().optional()
+    ),
+    fax: z.preprocess(
+        (val) => val === "" ? null : val,
+        z.string().nullable().optional()
+    ),
+    paymentTermDays: z.preprocess(
+        (val) => val === "" ? null : Number(val),
+        z.number().nullable().optional()
+    ),
 })
 
 type FormData = z.infer<typeof userSchema>
@@ -44,6 +64,7 @@ export default function UsersForm({ userId }: { userId: string }) {
         defaultValues: {
             firstName: '',
             lastName: '',
+            name: '',
             email: '',
             role: 'CUSTOMER',
             isEnterprise: false,
@@ -60,14 +81,28 @@ export default function UsersForm({ userId }: { userId: string }) {
     const currentUserRole = session?.user?.role
     const isStaff = ['ADMIN', 'ACCOUNTANT', 'SUPER_ADMIN'].includes(user?.role || '')
 
+    // Update the fetchUser effect to handle null values
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await fetch(`/api/v1/users/${userId}`)
+                const response = await fetch(`${API_DOMAIN}/users/${userId}`)
                 if (!response.ok) throw new Error('Failed to fetch user')
                 const data: FormData = await response.json()
-                setUser(data)
-                reset(data)
+
+                // Convert null values to empty strings for form inputs
+                const formData = {
+                    ...data,
+
+                    companyName: data.companyName || '',
+                    vatNumber: data.vatNumber || '',
+                    phone: data.phone || '',
+                    mobile: data.mobile || '',
+                    fax: data.fax || '',
+                    paymentTermDays: data.paymentTermDays || null,
+                }
+
+                setUser(formData)
+                reset(formData)
                 setLoading(false)
             } catch (error) {
                 toast.error('Failed to load user data')
@@ -79,7 +114,7 @@ export default function UsersForm({ userId }: { userId: string }) {
 
     const onSubmit = async (data: FormData) => {
         try {
-            const response = await fetch(`/api/v1/users/${userId}`, {
+            const response = await fetch(`${API_DOMAIN}/users/${userId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
@@ -113,6 +148,16 @@ export default function UsersForm({ userId }: { userId: string }) {
                     {errors.lastName && (
                         <span className="text-red-500 text-sm">
                             {errors.lastName.message?.toString()}
+                        </span>
+                    )}
+                </div>
+
+                <div>
+                    <Label>Name</Label>
+                    <Input {...register('name')} />
+                    {errors.name && (
+                        <span className="text-red-500 text-sm">
+                            {errors.name.message?.toString()}
                         </span>
                     )}
                 </div>
