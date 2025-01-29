@@ -11,10 +11,11 @@ import ItemTaxMultiSelect from '@/components/ItemTaxMultiSelect';
 import { toast } from 'react-toastify';
 import ItemDetailsSection from "@/components/item-form/ItemDetailsSection";
 import PricingSection from "@/components/item-form/PricingSection";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { API_DOMAIN } from "@/lib/utils/constants";
 import QuantitySection from "@/components/item-form/QuantitySection";
 import axios from 'axios';
+import VatsDropDown from "@/components/dashboard/dropdowns/VatsDropDown";
+import CountriesDropDown from "@/components/dashboard/dropdowns/CountriesDropDown";
 
 const itemSchema = z.object({
     itemNumber: z.string(),
@@ -39,8 +40,6 @@ interface ItemFormProps {
 
 export default function ItemForm({ itemId }: ItemFormProps) {
     const router = useRouter();
-    const [countries, setCountries] = useState<{ id: number; name: string; countryCode: string }[]>([]);
-    const [vatOptions, setVatOptions] = useState<{ id: number; vatType: string; vatPercent: number }[]>([]);
     const [loading, setLoading] = useState(true);
 
     const form = useForm<ItemFormData>({
@@ -60,9 +59,11 @@ export default function ItemForm({ itemId }: ItemFormProps) {
         },
     });
 
+    const countryId = form.watch('countryId'); // Watch for changes to countryId
+
+
     useEffect(() => {
         const fetchData = async () => {
-            await fetchCountries();
             if (itemId) {
                 await fetchItem(itemId);
             } else {
@@ -77,33 +78,6 @@ export default function ItemForm({ itemId }: ItemFormProps) {
     const handleCountryChange = async (countryId: string) => {
         form.setValue('countryId', countryId);
         form.setValue('vatId', '');
-        await fetchVatOptions(countryId);
-    };
-
-    const fetchCountries = async () => {
-        try {
-            const response = await fetch(`${API_DOMAIN}/countries`);
-            if (!response.ok) throw new Error('Failed to fetch countries');
-            const data = await response.json();
-            setCountries(data.countries);
-        } catch (error) {
-            console.error('Error fetching countries:', error);
-            toast.error('Failed to fetch countries');
-        }
-    };
-
-    const fetchVatOptions = async (countryId: string) => {
-        if (!countryId) return;
-        try {
-            const response = await fetch(`${API_DOMAIN}/vats?countryId=${countryId}`);
-            if (!response.ok) throw new Error('Failed to fetch VAT options');
-            const { vatTypes } = await response.json();
-            setVatOptions(vatTypes);
-        } catch (error) {
-            console.error('Error fetching VAT options:', error);
-            toast.error('Failed to fetch VAT options');
-            setVatOptions([]);
-        }
     };
 
     const fetchItem = async (id: number) => {
@@ -116,6 +90,11 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                 vatId: itemData.vat?.id?.toString() || '',
                 unitId: itemData.unit?.id?.toString() || '',
                 classId: itemData.itemClass?.id?.toString() || '',
+                purchasePrice: parseInt(itemData.purchasePrice) || 0,
+                retailPrice: parseInt(itemData.retailPrice) || 0,
+                stockQuantity: parseInt(itemData.stockQuantity) || 0,
+                minQuantity: parseInt(itemData.minQuantity) || 0,
+                countryId: itemData.country?.id?.toString() || '',
             });
         } catch (error) {
             console.error('Error fetching item:', error);
@@ -165,6 +144,8 @@ export default function ItemForm({ itemId }: ItemFormProps) {
         }
     };
 
+
+
     if (loading) {
         return <div>Loading...</div>;
     }
@@ -181,51 +162,44 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                 <div>
                     <ItemDetailsSection control={form.control} showItemNumber={!itemId} />
                     <PricingSection control={form.control} />
+
+                    {/* COUNTRIES SECTION */}
                     <FormField
                         control={form.control}
                         name="countryId"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Country</FormLabel>
-                                <Select onValueChange={(value) => handleCountryChange(value)}
-                                        defaultValue={field.value}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Country" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {countries.map((country) => (
-                                            <SelectItem key={country.id} value={country.id.toString()}>
-                                                {country.name} ({country.countryCode})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <CountriesDropDown
+                                    selectedCountryId={field.value}
+                                    onSelect={(countryId) => {
+                                        field.onChange(countryId); // Set the selected country in the form
+                                        form.setValue('vatId', ''); // Reset the VAT when the country changes
+                                    }}
+                                />
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
+
+                    {/* VATS SECTION */}
                     <FormField
                         control={form.control}
                         name="vatId"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>VAT</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select VAT" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {vatOptions.map((vat) => (
-                                            <SelectItem key={vat.id} value={vat.id.toString()}>
-                                                {vat.vatType} ({vat.vatPercent}%)
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <VatsDropDown
+                                    selectedVatId={field.value}
+                                    countryId={form.getValues('countryId')}
+                                    onSelect={field.onChange}
+                                />
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
+
+                    {/* UNITS SECTION */}
                     <FormField
                         control={form.control}
                         name="unitId"
@@ -238,6 +212,8 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                             </FormItem>
                         )}
                     />
+
+                    {/* ITEM CLASS SECTION */}
                     <FormField
                         control={form.control}
                         name="classId"
@@ -250,7 +226,10 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                             </FormItem>
                         )}
                     />
+                    {/* QUANTITY SECTION */}
                     <QuantitySection control={form.control} />
+
+                    {/* TAXES SECTION */}
                     <FormField
                         control={form.control}
                         name="itemTaxes"

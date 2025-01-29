@@ -24,8 +24,7 @@ export async function GET(request: NextRequest) {
         },
     })
 
-    console.log('log ====> customers BEFORE decrypting', customers)
-    return NextResponse.json(customers)
+    return NextResponse.json(customers, {status: 200});
 }
 
 export async function POST(request: NextRequest) {

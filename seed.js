@@ -238,7 +238,7 @@ async function seedDatabase() {
 
         // Mock data for 10 items
         const items = [
-            // Original 10 items are here
+            // The Original 10 items are here
             {
                 label: "Sport Shoes",
                 description: "High-quality running shoes.",

@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        console.log('Fetched items:', items);
+        // console.log('Fetched items:', items);
 
         const formattedItems = items.map((item) => ({
             ...item,

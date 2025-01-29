@@ -25,31 +25,31 @@ async function seedDatabase() {
             console.log('Country "Belgium" already exists.');
         }
 
-        // // 2. Add or verify the country "France"
-        // let france = await prisma.country.findUnique({
-        //     where: {countryCode: 'FR'},
-        // });
-        //
-        // if (!france) {
-        //     france = await prisma.country.create({
-        //         data: {
-        //             name: 'France',
-        //             countryCode: 'FR',
-        //         },
-        //     });
-        //     console.log('Country "France" added.');
-        // } else {
-        //     console.log('Country "France" already exists.');
-        // }
+        // 2. Add or verify the country "France"
+        let france = await prisma.country.findUnique({
+            where: {countryCode: 'FR'},
+        });
+
+        if (!france) {
+            france = await prisma.country.create({
+                data: {
+                    name: 'France',
+                    countryCode: 'FR',
+                },
+            });
+            console.log('Country "France" added.');
+        } else {
+            console.log('Country "France" already exists.');
+        }
 
         // 3. Add or verify VAT rates
         const vatRates = [
             // Belgium VAT
             {vatType: 'REDUCED', vatPercent: 6, countryId: belgium.id},
             {vatType: 'STANDARD', vatPercent: 21, countryId: belgium.id},
-            // // France VAT
-            // {vatType: 'REDUCED', vatPercent: 5.5, countryId: france.id},
-            // {vatType: 'STANDARD', vatPercent: 20, countryId: france.id},
+            // France VAT
+            {vatType: 'REDUCED', vatPercent: 5.5, countryId: france.id},
+            {vatType: 'STANDARD', vatPercent: 20, countryId: france.id},
         ];
 
         for (const vatRate of vatRates) {
@@ -113,36 +113,36 @@ async function seedDatabase() {
             }
         }
 
-        // // 5. Load and insert cities for France
-        // console.log('Loading city data for France...');
-        // const franceData = fs.readFileSync('public/datas/cities.json', 'utf-8');
-        // const franceJson = JSON.parse(franceData);
-        //
-        // const franceCities = Array.from(
-        //     new Map(
-        //         franceJson.cities
-        //             .filter((item) => item.label && item.zip_code)
-        //             .map((item) => [
-        //                 item.zip_code,
-        //                 {cityCode: item.zip_code, name: item.label, countryId: france.id},
-        //             ])
-        //     ).values()
-        // );
-        //
-        // console.log(`Inserting ${franceCities.length} unique cities for France...`);
-        //
-        // for (const city of franceCities) {
-        //     const existingCity = await prisma.city.findFirst({
-        //         where: {cityCode: city.cityCode},
-        //     });
-        //
-        //     if (!existingCity) {
-        //         await prisma.city.create({data: city});
-        //         console.log(`City "${city.name}" added for France.`);
-        //     } else {
-        //         console.log(`City "${city.name}" already exists for France.`);
-        //     }
-        // }
+        // 5. Load and insert cities for France
+        console.log('Loading city data for France...');
+        const franceData = fs.readFileSync('public/datas/cities.json', 'utf-8');
+        const franceJson = JSON.parse(franceData);
+
+        const franceCities = Array.from(
+            new Map(
+                franceJson.cities
+                    .filter((item) => item.label && item.zip_code)
+                    .map((item) => [
+                        item.zip_code,
+                        {cityCode: item.zip_code, name: item.label, countryId: france.id},
+                    ])
+            ).values()
+        );
+
+        console.log(`Inserting ${franceCities.length} unique cities for France...`);
+
+        for (const city of franceCities) {
+            const existingCity = await prisma.city.findFirst({
+                where: {cityCode: city.cityCode},
+            });
+
+            if (!existingCity) {
+                await prisma.city.create({data: city});
+                console.log(`City "${city.name}" added for France.`);
+            } else {
+                console.log(`City "${city.name}" already exists for France.`);
+            }
+        }
 
         // 6. Add or verify common units
         const commonUnits = [

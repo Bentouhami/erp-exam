@@ -125,6 +125,8 @@ export async function POST(request: NextRequest) {
 
         const totalTTC = totalHT + totalVAT;
 
+        delete invoiceData.id;
+
         const invoice = await prisma.invoice.create({
             data: {
                 ...invoiceData,
