@@ -486,7 +486,6 @@ async function seedDatabase() {
             }
         }
 
-        // ADD SUPER_ADMIN
         // Add Super Admin user
         const superAdminEmail = "bentouhami.faisal@gmail.com";
         const existingSuperAdmin = await prisma.user.findUnique({

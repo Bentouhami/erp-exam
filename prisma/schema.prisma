@@ -302,7 +302,7 @@ model Country {
   // Relations
   cities  City[]
   vats    Vat[]
-  VatRate VatRate[]
+  vatRate VatRate[]
 
   @@map("countries")
 }
@@ -334,7 +334,7 @@ model Item {
   stockMovements StockMovement[] // Historique des mouvements de stock liés à l'article (ajout, retrait, etc.)
   invoiceDetails InvoiceDetail[] // Factures contenant cet article (ex. factures d'achat, factures de vente, etc.)
   itemTaxes      ItemTax[] // Taxes additionnelles appliquées à l'article (ex. taxe sur la valeur ajoutée, taxe sur le prix de vente, etc.)
-  Vat            Vat?            @relation(fields: [vatId], references: [id])
+  vat            Vat?            @relation(fields: [vatId], references: [id])
   vatId          Int?
 
   @@index([itemNumber, supplierReference, label]) // Index pour faciliter la recherche

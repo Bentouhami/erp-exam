@@ -93,7 +93,7 @@ export async function PUT(
         // Prepare `invoiceDetails` data
         const invoiceDetailsData = items.map((item: any, index: number) => {
             const itemDetail = itemDetails.find((i) => i.id === parseInt(item.itemId));
-            if (!itemDetail) throw new Error('Item not found');
+            if (!itemDetail || !itemDetail.vat) throw new Error('Item not found');
 
             const unitPrice = Number(itemDetail.retailPrice); // Retail price as `unitPrice`
             const vatRate = Number(itemDetail.vat.vatPercent) / 100;
