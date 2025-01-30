@@ -300,8 +300,9 @@ model Country {
   updatedAt DateTime @updatedAt
 
   // Relations
-  cities City[]
-  vats   Vat[]
+  cities  City[]
+  vats    Vat[]
+  VatRate VatRate[]
 
   @@map("countries")
 }
@@ -328,13 +329,13 @@ model Item {
   updatedAt DateTime @updatedAt
 
   // Relations
-  vatId          Int
-  vat            Vat             @relation(fields: [vatId], references: [id]) // Relates to the VAT table
   unit           Unit            @relation(fields: [unitId], references: [id]) // Unité de mesure de l'article (ex. "kg", "pcs")
   itemClass      ItemClass       @relation(fields: [classId], references: [id]) // Catégorie ou classe de l'article (ex. "Electronics", "Furniture", etc.)
   stockMovements StockMovement[] // Historique des mouvements de stock liés à l'article (ajout, retrait, etc.)
   invoiceDetails InvoiceDetail[] // Factures contenant cet article (ex. factures d'achat, factures de vente, etc.)
   itemTaxes      ItemTax[] // Taxes additionnelles appliquées à l'article (ex. taxe sur la valeur ajoutée, taxe sur le prix de vente, etc.)
+  Vat            Vat?            @relation(fields: [vatId], references: [id])
+  vatId          Int?
 
   @@index([itemNumber, supplierReference, label]) // Index pour faciliter la recherche
   @@map("items")
@@ -376,6 +377,7 @@ model InvoiceDetail {
   discount      Decimal @default(0) @db.Decimal(5, 2) // Remise en pourcentage appliquée à la ligne
   unitPrice     Decimal @db.Decimal(10, 2) // Prix unitaire hors taxes pour la ligne (ex. pour les articles de chaussures) eg. 10 euros
   vatBaseAmount Decimal @db.Decimal(10, 2) // Montant HT pour la ligne avant la TVA
+  vatPercent    Decimal @db.Decimal(5, 2) // VAT rate applied (6% or 21%)
   vatAmount     Decimal @db.Decimal(10, 2) // Montant de la TVA pour la ligne e.g. 10 euros
   totalPrice    Decimal @db.Decimal(10, 2) // Montant TTC pour la ligne (HT + TVA) e.g. 20 euros
 
@@ -388,6 +390,23 @@ model InvoiceDetail {
   User    User?   @relation(fields: [userId], references: [id])
 
   @@map("invoice_details")
+}
+
+model VatRate {
+  id          Int     @id @default(autoincrement())
+  countryId   Int // Link to the customer's country
+  itemClassId Int // Link to the category of the item
+  vatPercent  Decimal @db.Decimal(5, 2) // VAT rate (e.g., 6.00 or 21.00)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  country   Country   @relation(fields: [countryId], references: [id])
+  itemClass ItemClass @relation(fields: [itemClassId], references: [id])
+
+  @@unique([countryId, itemClassId]) // Ensure unique VAT rates per country and category
+  @@map("vat_rates")
 }
 
 // Payment model
@@ -410,12 +429,13 @@ model Payment {
 
 // ItemClass model representing the type of item (eg. Electronics, Furniture, etc.)
 model ItemClass {
-  id        Int      @id @default(autoincrement())
-  label     String   @db.VarChar(50)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int       @id @default(autoincrement())
+  label     String    @db.VarChar(50)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   // Relations
   items     Item[]
+  VatRate   VatRate[] // VAT rates per country
 
   @@map("item_classes")
 }

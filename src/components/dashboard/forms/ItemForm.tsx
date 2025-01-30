@@ -41,6 +41,7 @@ interface ItemFormProps {
 export default function ItemForm({ itemId }: ItemFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
+    const [countries, setCountries] = useState<{ id: number; name: string; countryCode: string }[]>([]);
 
     const form = useForm<ItemFormData>({
         resolver: zodResolver(itemSchema),
@@ -59,26 +60,36 @@ export default function ItemForm({ itemId }: ItemFormProps) {
         },
     });
 
-    const countryId = form.watch('countryId'); // Watch for changes to countryId
-
+    const countryId = form.watch('countryId');
 
     useEffect(() => {
         const fetchData = async () => {
-            if (itemId) {
-                await fetchItem(itemId);
-            } else {
-                await generateItemNumber();
+            try {
+                // Fetch the list of countries
+                const countriesResponse = await axios.get(`${API_DOMAIN}/countries`);
+                // Check if the response data is an array or needs unwrapping
+                const countriesData = Array.isArray(countriesResponse.data)
+                    ? countriesResponse.data
+                    : countriesResponse.data.data; // Adjust based on actual API structure
+                setCountries(countriesData || []); // Fallback to empty array
+
+                // Fetch item data or generate item number
+                if (itemId) {
+                    await fetchItem(itemId);
+                } else {
+                    await generateItemNumber();
+                }
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                toast.error('Failed to load initial data');
+                setCountries([]); // Ensure countries is an array on error
+                setLoading(false);
             }
-            setLoading(false);
         };
 
         fetchData();
     }, [itemId]);
-
-    const handleCountryChange = async (countryId: string) => {
-        form.setValue('countryId', countryId);
-        form.setValue('vatId', '');
-    };
 
     const fetchItem = async (id: number) => {
         try {
@@ -90,8 +101,8 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                 vatId: itemData.vat?.id?.toString() || '',
                 unitId: itemData.unit?.id?.toString() || '',
                 classId: itemData.itemClass?.id?.toString() || '',
-                purchasePrice: parseInt(itemData.purchasePrice) || 0,
-                retailPrice: parseInt(itemData.retailPrice) || 0,
+                purchasePrice: parseFloat(itemData.purchasePrice) || 0,
+                retailPrice: parseFloat(itemData.retailPrice) || 0,
                 stockQuantity: parseInt(itemData.stockQuantity) || 0,
                 minQuantity: parseInt(itemData.minQuantity) || 0,
                 countryId: itemData.country?.id?.toString() || '',
@@ -104,17 +115,7 @@ export default function ItemForm({ itemId }: ItemFormProps) {
 
     const generateItemNumber = async () => {
         try {
-            const response = await axios.get(`${API_DOMAIN}/items/generate-number`, {
-                headers: {
-                    "Cache-Control": "no-cache",
-                    Pragma: "no-cache",
-                    Expires: "0",
-                },
-            });
-            if (!response.data.itemNumber) {
-                throw new Error('Failed to generate item number');
-            }
-            console.log(`Generated item number: ${response.data.itemNumber}`);
+            const response = await axios.get(`${API_DOMAIN}/items/generate-number`);
             form.setValue('itemNumber', response.data.itemNumber);
         } catch (error) {
             console.error('Error generating item number:', error);
@@ -123,12 +124,6 @@ export default function ItemForm({ itemId }: ItemFormProps) {
     };
 
     const onSubmit = async (data: ItemFormData) => {
-        console.log('Form submitted with data:', data); // Debugging line
-        const isValid = await form.trigger(); // Manually trigger validation
-        if (!isValid) {
-            console.log('Form validation errors:', form.formState.errors); // Debugging line
-            return;
-        }
         try {
             const response = await fetch(`${API_DOMAIN}/items/${itemId || ''}`, {
                 method: itemId ? 'PUT' : 'POST',
@@ -144,11 +139,8 @@ export default function ItemForm({ itemId }: ItemFormProps) {
         }
     };
 
+    if (loading) return <div>Loading...</div>;
 
-
-    if (loading) {
-        return <div>Loading...</div>;
-    }
 
     return (
         <Form {...form}>
@@ -171,10 +163,11 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                             <FormItem>
                                 <FormLabel>Country</FormLabel>
                                 <CountriesDropDown
+                                    countries={countries}
                                     selectedCountryId={field.value}
                                     onSelect={(countryId) => {
-                                        field.onChange(countryId); // Set the selected country in the form
-                                        form.setValue('vatId', ''); // Reset the VAT when the country changes
+                                        field.onChange(countryId);
+                                        form.setValue('vatId', '');
                                     }}
                                 />
                                 <FormMessage />
