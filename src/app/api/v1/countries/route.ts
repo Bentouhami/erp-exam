@@ -23,10 +23,8 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ message: "Countries not found!" }, { status: 404 });
         }
 
-        return NextResponse.json(
-            { countries },
-            { status: 200 }
-        );
+        return NextResponse.json(countries, { status: 200 });
+
     } catch (error) {
         return NextResponse.json({ message: "Error retrieving countries!" }, { status: 500 });
     }

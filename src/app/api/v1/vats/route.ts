@@ -31,11 +31,8 @@ export async function GET(req: NextRequest) {
         const vatTypes = await prisma.vat.findMany(query);
 
         if (!vatTypes) {
-            console.log("log ====> GET /api/v1/vats - vatTypes not found");
             return NextResponse.json({ message: "Vat types not found!" }, { status: 404 });
         }
-
-        console.log("log ====> GET /api/v1/vats - vatTypes found", vatTypes);
         return NextResponse.json(
             { vatTypes },
             { status: 200 }
