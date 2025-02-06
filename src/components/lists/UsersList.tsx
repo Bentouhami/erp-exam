@@ -58,6 +58,7 @@ export default function UsersList({role}: UsersListProps) {
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState<SortConfig>({key: 'userNumber', direction: 'asc'});
+    const [selectedRole, setSelectedRole] = useState<string>("ALL");
     const [currentPage, setCurrentPage] = useState(1);
     const [usersPerPage] = useState(10);
     const [loading, setLoading] = useState(true);
@@ -229,6 +230,11 @@ export default function UsersList({role}: UsersListProps) {
     // Apply filters and search term whenever filters or search term change
     useEffect(() => {
         const filtered = users.filter(user => {
+            // If the selectedRole is not "ALL", only include users matching that role.
+            if (selectedRole !== "ALL" && user.role !== selectedRole) {
+                return false;
+            }
+
             const searchLower = searchTerm.toLowerCase();
             return (
                 user.userNumber?.toLowerCase().includes(searchLower) ||
@@ -246,7 +252,7 @@ export default function UsersList({role}: UsersListProps) {
         });
         setFilteredUsers(filtered);
         setCurrentPage(1);
-    }, [searchTerm, users]);
+    }, [searchTerm, users, selectedRole]);
 
     if (loading) {
         return <ListSkeleton/>;
@@ -267,36 +273,48 @@ export default function UsersList({role}: UsersListProps) {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="max-w-xl flex-grow"
                 />
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline">
-                            Columns <ChevronDown className="ml-2 h-4 w-4"/>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
-                        {Object.keys(visibleColumns).map((column) => (
-                            <DropdownMenuItem
-                                key={column}
-                                onSelect={(e) => e.preventDefault()} // Prevent a menu from closing
-                            >
-                                <label className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={visibleColumns[column]}
-                                        onChange={() =>
-                                            setVisibleColumns((prev) => ({
-                                                ...prev,
-                                                [column]: !prev[column],
-                                            }))
-                                        }
-                                    />
-                                    <span>{column}</span>
-                                </label>
-                            </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    <select
+                        value={selectedRole}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="border rounded px-2 py-1"
+                    >
+                        <option value="ALL">Filter by role</option>
+                        <option value="CUSTOMER">Customer</option>
+                        <option value="ADMIN">Admin</option>
+                        <option value="ACCOUNTANT">Accountant</option>
+                        <option value="SUPER_ADMIN">Super Admin</option>
+                    </select>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                Display more fields <ChevronDown className="ml-2 h-4 w-4"/>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                            {Object.keys(visibleColumns).map((column) => (
+                                <DropdownMenuItem
+                                    key={column}
+                                    onSelect={(e) => e.preventDefault()} // Prevent a menu from closing
+                                >
+                                    <label className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={visibleColumns[column]}
+                                            onChange={() =>
+                                                setVisibleColumns((prev) => ({
+                                                    ...prev,
+                                                    [column]: !prev[column],
+                                                }))
+                                            }
+                                        />
+                                        <span>{column}</span>
+                                    </label>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
             </div>
 
             {/* Table Section */}
@@ -520,5 +538,5 @@ export default function UsersList({role}: UsersListProps) {
                 </div>
             </div>
         </div>
-    );
+);
 }

@@ -1,102 +1,39 @@
-import fs from 'fs';
 import {PrismaClient} from '@prisma/client';
 import bcrypt from "bcryptjs";
+import fs from "fs";
 
 const prisma = new PrismaClient();
 
 async function seedDatabase() {
     try {
-        console.log('Seeding the database...');
+        console.log(' 🌍 Seeding the database...');
 
-        // 1. Add or verify the country "Belgium"
-        let belgium = await prisma.country.findUnique({
-            where: {countryCode: 'BE'},
-        });
+        //region Countries and cities
+        const countries = [{name: 'Belgium', countryCode: 'BE'}, {name: 'France', countryCode: 'FR'}];
 
-        if (!belgium) {
-            belgium = await prisma.country.create({
-                data: {
-                    name: 'Belgium',
-                    countryCode: 'BE',
-                },
+        for (const countryData of countries) {
+            await prisma.country.upsert({
+                where: {countryCode: countryData.countryCode}, update: {}, create: countryData
             });
-            console.log('Country "Belgium" added.');
-        } else {
-            console.log('Country "Belgium" already exists.');
         }
 
-        // 2. Add or verify the country "France"
-        let france = await prisma.country.findUnique({
-            where: {countryCode: 'FR'},
-        });
+        const belgium = await prisma.country.findUnique({where: {countryCode: 'BE'}});
+        const france = await prisma.country.findUnique({where: {countryCode: 'FR'}});
 
-        if (!france) {
-            france = await prisma.country.create({
-                data: {
-                    name: 'France',
-                    countryCode: 'FR',
-                },
-            });
-            console.log('Country "France" added.');
-        } else {
-            console.log('Country "France" already exists.');
-        }
-
-        // 3. Add or verify VAT rates
-        const vatRates = [
-            // Belgium VAT
-            {vatType: 'REDUCED', vatPercent: 6, countryId: belgium.id},
-            {vatType: 'STANDARD', vatPercent: 21, countryId: belgium.id},
-            // France VAT
-            {vatType: 'REDUCED', vatPercent: 5.5, countryId: france.id},
-            {vatType: 'STANDARD', vatPercent: 20, countryId: france.id},
-        ];
-
-        for (const vatRate of vatRates) {
-            const existingVat = await prisma.vat.findFirst({
-                where: {
-                    vatType: vatRate.vatType,
-                    countryId: vatRate.countryId,
-                    vatPercent: vatRate.vatPercent,
-                },
-            });
-
-            if (!existingVat) {
-                await prisma.vat.create({
-                    data: vatRate,
-                });
-                console.log(
-                    `VAT ${vatRate.vatPercent}% (${vatRate.vatType}) added for ${
-                        vatRate.countryId === belgium.id ? 'Belgium' : 'France'
-                    }.`
-                );
-            } else {
-                console.log(
-                    `VAT ${vatRate.vatPercent}% (${vatRate.vatType}) already exists for ${
-                        vatRate.countryId === belgium.id ? 'Belgium' : 'France'
-                    }.`
-                );
-            }
-        }
+        console.log(' 🌍 Countries seeded.');
 
         // 4. Load and insert cities for Belgium
         console.log('Loading city data for Belgium...');
-        const belgiumData = fs.readFileSync(
-            'public/datas/georef-belgium-postal-codes.json',
-            'utf-8'
-        );
+        const belgiumData = fs.readFileSync('public/datas/georef-belgium-postal-codes.json', 'utf-8');
         const belgiumJson = JSON.parse(belgiumData);
 
-        const belgiumCities = Array.from(
-            new Map(
-                belgiumJson
-                    .filter((item) => item.smun_name_fr && item.postcode)
-                    .map((item) => [
-                        item.postcode,
-                        {cityCode: item.postcode, name: item.smun_name_fr, countryId: belgium.id},
-                    ])
-            ).values()
-        );
+        const belgiumCities = Array.from(new Map(belgiumJson
+            .filter((item) => item.smun_name_fr && item.postcode)
+            .map((item) => [item.postcode, {
+                cityCode: item.postcode,
+                name: item.smun_name_fr,
+                countryId: belgium.id
+            },])).values());
 
         console.log(`Inserting ${belgiumCities.length} unique cities for Belgium...`);
 
@@ -108,8 +45,6 @@ async function seedDatabase() {
             if (!existingCity) {
                 await prisma.city.create({data: city});
                 console.log(`City "${city.name}" added for Belgium.`);
-            } else {
-                console.log(`City "${city.name}" already exists for Belgium.`);
             }
         }
 
@@ -118,16 +53,13 @@ async function seedDatabase() {
         const franceData = fs.readFileSync('public/datas/cities.json', 'utf-8');
         const franceJson = JSON.parse(franceData);
 
-        const franceCities = Array.from(
-            new Map(
-                franceJson.cities
-                    .filter((item) => item.label && item.zip_code)
-                    .map((item) => [
-                        item.zip_code,
-                        {cityCode: item.zip_code, name: item.label, countryId: france.id},
-                    ])
-            ).values()
-        );
+        const franceCities = Array.from(new Map(franceJson.cities
+            .filter((item) => item.label && item.zip_code)
+            .map((item) => [item.zip_code, {
+                cityCode: item.zip_code,
+                name: item.label,
+                countryId: france.id
+            },])).values());
 
         console.log(`Inserting ${franceCities.length} unique cities for France...`);
 
@@ -139,218 +71,178 @@ async function seedDatabase() {
             if (!existingCity) {
                 await prisma.city.create({data: city});
                 console.log(`City "${city.name}" added for France.`);
-            } else {
-                console.log(`City "${city.name}" already exists for France.`);
             }
         }
+        //endregion
 
-        // 6. Add or verify common units
-        const commonUnits = [
-            {name: 'Pièce'},      // Piece
-            {name: 'Kilogramme'}, // Kilogram
-            {name: 'Litre'},      // Liter
-            {name: 'Mètre'},      // Meter
-            {name: 'Centimètre'}, // Centimeter
-            {name: 'Gramme'},     // Gram
-            {name: 'Boîte'},      // Box
-            {name: 'Paquet'},     // Package
-        ];
+        //region VAT Rates by country and item class
+        const vatRates = [// Belgium
+            {countryId: belgium.id, vatPercent: 6.00, itemClassLabel: 'Alimentation'}, {
+                countryId: belgium.id,
+                vatPercent: 21.00,
+                itemClassLabel: 'Électronique'
+            }, {countryId: belgium.id, vatPercent: 21.00, itemClassLabel: 'Mobilier'}, {
+                countryId: belgium.id,
+                vatPercent: 21.00,
+                itemClassLabel: 'Vêtements'
+            }, {countryId: belgium.id, vatPercent: 6.00, itemClassLabel: 'Livres'}, // France
+            {countryId: france.id, vatPercent: 5.50, itemClassLabel: 'Alimentation'}, {
+                countryId: france.id,
+                vatPercent: 20.00,
+                itemClassLabel: 'Électronique'
+            }, {countryId: france.id, vatPercent: 20.00, itemClassLabel: 'Mobilier'}, {
+                countryId: france.id,
+                vatPercent: 20.00,
+                itemClassLabel: 'Vêtements'
+            }, {countryId: france.id, vatPercent: 5.50, itemClassLabel: 'Livres'},];
 
-        console.log('Inserting common units...');
-
-        for (const unit of commonUnits) {
-            const existingUnit = await prisma.unit.findFirst({
-                where: {name: unit.name},
+        for (const vatRate of vatRates) {
+            // Upsert the ItemClass so it definitely exists
+            let itemClass = await prisma.itemClass.upsert({
+                where: {label: vatRate.itemClassLabel}, update: {}, create: {label: vatRate.itemClassLabel}
             });
 
-            if (!existingUnit) {
-                await prisma.unit.create({
-                    data: unit,
-                });
-                console.log(`Unit "${unit.name}" added.`);
-            } else {
-                console.log(`Unit "${unit.name}" already exists.`);
-            }
-        }
-
-
-        // 7. Add or verify common item classes
-        const commonItemClasses = [
-            {label: 'Électronique'},    // Electronics
-            {label: 'Mobilier'},        // Furniture
-            {label: 'Vêtements'},       // Clothing
-            {label: 'Alimentation'},    // Food
-            {label: 'Accessoires'},     // Accessories
-            {label: 'Jouets'},          // Toys
-            {label: 'Outils'},          // Tools
-            {label: 'Livres'},          // Books
-        ];
-
-        console.log('Inserting common item classes...');
-
-        for (const itemClass of commonItemClasses) {
-            const existingItemClass = await prisma.itemClass.findFirst({
-                where: {label: itemClass.label},
+            // Upsert the VatRate
+            await prisma.vatRate.upsert({
+                where: {
+                    countryId_itemClassId: {
+                        countryId: vatRate.countryId, itemClassId: itemClass.id
+                    }
+                }, update: {}, create: {
+                    countryId: vatRate.countryId, itemClassId: itemClass.id, vatPercent: vatRate.vatPercent
+                }
             });
-
-            if (!existingItemClass) {
-                await prisma.itemClass.create({
-                    data: itemClass,
-                });
-                console.log(`Item class "${itemClass.label}" added.`);
-            } else {
-                console.log(`Item class "${itemClass.label}" already exists.`);
-            }
         }
 
-        // 8. Add or verify common tax types (Utax)
-        const commonUtaxes = [
-            {label: 'Luxury Tax', utaxType: 'LUXURY'},
-            {label: 'Environmental Tax', utaxType: 'SPECIAL'},
-            {label: 'Health Tax', utaxType: 'SPECIAL'},
-        ];
+        console.log('VAT rates seeded.');
+        // //endregion
 
-        console.log('Inserting common tax types...');
+        //region Units
+        const units = [{name: 'Pièce'}, {name: 'Kilogramme'}, {name: 'Litre'}, {name: 'Mètre'}, {name: 'Centimètre'}, {name: 'Gramme'}, {name: 'Boîte'}, {name: 'Paquet'}, {name: 'Carton'}, {name: 'Sac'}];
 
-        for (const utax of commonUtaxes) {
-            const existingUtax = await prisma.utax.findFirst({
-                where: {label: utax.label},
+        for (const unit of units) {
+            await prisma.unit.upsert({
+                where: {name: unit.name}, update: {}, create: unit
             });
-
-            if (!existingUtax) {
-                await prisma.utax.create({
-                    data: utax,
-                });
-                console.log(`Tax type "${utax.label}" added.`);
-            } else {
-                console.log(`Tax type "${utax.label}" already exists.`);
-            }
         }
 
-        // Fetch Units, VATs, and Classes for Items
-        const units = await prisma.unit.findMany();
-        const vats = await prisma.vat.findMany();
-        const itemClasses = await prisma.itemClass.findMany();
+        console.log('Units seeded.');
+        //endregion
 
-        if (!units.length || !vats.length || !itemClasses.length) {
-            throw new Error('Units, VATs, or Item Classes are missing. Ensure they are seeded before seeding items.');
-        }
-
+        //region Items
         // Mock data for 10 items
-        const items = [
-            // The Original 10 items are here
+        const items = [// --- The original 12 from your new script ---
             {
                 label: "Sport Shoes",
-                description: "High-quality running shoes.",
-                purchasePrice: 50.0,
-                retailPrice: 80.0,
+                description: "High-quality running shoes",
+                retailPrice: 80.00,
+                purchasePrice: 50.00,
                 stockQuantity: 100,
                 minQuantity: 10,
-                vatId: vats[0].id,
-                unitId: units[0].id,
-                classId: itemClasses[0].id
-            },
-            {
+                classLabel: "Vêtements",   // Clothing
+                unitName: "Pièce"
+            }, {
                 label: "Office Chair",
-                description: "Ergonomic office chair.",
-                purchasePrice: 150.0,
-                retailPrice: 250.0,
+                description: "Ergonomic office chair",
+                retailPrice: 250.00,
+                purchasePrice: 180.00,
                 stockQuantity: 50,
                 minQuantity: 5,
-                vatId: vats[1].id,
-                unitId: units[1].id,
-                classId: itemClasses[1].id
-            },
-            {
+                classLabel: "Mobilier",    // Furniture
+                unitName: "Pièce"
+            }, {
                 label: "Desk Lamp",
-                description: "Adjustable desk lamp.",
-                purchasePrice: 30.0,
-                retailPrice: 60.0,
+                description: "Adjustable desk lamp",
+                retailPrice: 60.00,
+                purchasePrice: 30.00,
                 stockQuantity: 200,
                 minQuantity: 15,
-                vatId: vats[0].id,
-                unitId: units[2].id,
-                classId: itemClasses[2].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Bluetooth Headphones",
-                description: "Noise-cancelling headphones.",
-                purchasePrice: 100.0,
-                retailPrice: 180.0,
+                description: "Noise-cancelling headphones",
+                retailPrice: 180.00,
+                purchasePrice: 100.00,
                 stockQuantity: 80,
                 minQuantity: 10,
-                vatId: vats[1].id,
-                unitId: units[0].id,
-                classId: itemClasses[0].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Standing Desk",
-                description: "Adjustable standing desk.",
-                purchasePrice: 250.0,
-                retailPrice: 400.0,
+                description: "Adjustable standing desk",
+                retailPrice: 400.00,
+                purchasePrice: 250.00,
                 stockQuantity: 20,
                 minQuantity: 2,
-                vatId: vats[0].id,
-                unitId: units[1].id,
-                classId: itemClasses[1].id
-            },
-            {
+                classLabel: "Mobilier",
+                unitName: "Pièce"
+            }, {
                 label: "Gaming Chair",
-                description: "Comfortable gaming chair.",
-                purchasePrice: 200.0,
-                retailPrice: 350.0,
+                description: "Comfortable gaming chair",
+                retailPrice: 350.00,
+                purchasePrice: 200.00,
                 stockQuantity: 40,
                 minQuantity: 5,
-                vatId: vats[1].id,
-                unitId: units[1].id,
-                classId: itemClasses[1].id
-            },
-            {
+                classLabel: "Mobilier",
+                unitName: "Pièce"
+            }, {
                 label: "Monitor 24 inch",
-                description: "Full HD LED monitor.",
-                purchasePrice: 120.0,
-                retailPrice: 220.0,
+                description: "Full HD LED monitor",
+                retailPrice: 220.00,
+                purchasePrice: 120.00,
                 stockQuantity: 60,
                 minQuantity: 8,
-                vatId: vats[0].id,
-                unitId: units[0].id,
-                classId: itemClasses[2].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Keyboard",
-                description: "Mechanical keyboard.",
-                purchasePrice: 80.0,
-                retailPrice: 150.0,
+                description: "Mechanical keyboard",
+                retailPrice: 150.00,
+                purchasePrice: 80.00,
                 stockQuantity: 90,
                 minQuantity: 10,
-                vatId: vats[1].id,
-                unitId: units[1].id,
-                classId: itemClasses[0].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Wireless Mouse",
-                description: "Ergonomic wireless mouse.",
-                purchasePrice: 40.0,
-                retailPrice: 70.0,
+                description: "Ergonomic wireless mouse",
+                retailPrice: 70.00,
+                purchasePrice: 40.00,
                 stockQuantity: 150,
                 minQuantity: 20,
-                vatId: vats[0].id,
-                unitId: units[2].id,
-                classId: itemClasses[0].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Printer",
-                description: "All-in-one wireless printer.",
-                purchasePrice: 180.0,
-                retailPrice: 300.0,
+                description: "All-in-one wireless printer",
+                retailPrice: 300.00,
+                purchasePrice: 180.00,
                 stockQuantity: 30,
                 minQuantity: 3,
-                vatId: vats[1].id,
-                unitId: units[0].id,
-                classId: itemClasses[2].id
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
+                label: "Book",
+                description: "Best-selling novel",
+                retailPrice: 20.00,
+                purchasePrice: 10.00,
+                stockQuantity: 30,
+                minQuantity: 5,
+                classLabel: "Livres",
+                unitName: "Pièce"
+            }, {
+                label: "Bread",
+                description: "Fresh bread",
+                retailPrice: 5.00,
+                purchasePrice: 3.00,
+                stockQuantity: 50,
+                minQuantity: 5,
+                classLabel: "Alimentation",
+                unitName: "Kilogramme"
             },
 
-            // New 10 items
+            // --- 10 Missing items from the old script ---
             {
                 label: "Smartwatch",
                 description: "Waterproof smartwatch with GPS.",
@@ -358,117 +250,104 @@ async function seedDatabase() {
                 retailPrice: 250.0,
                 stockQuantity: 70,
                 minQuantity: 10,
-                vatId: vats[0].id,
-                unitId: units[0].id,
-                classId: itemClasses[0].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Electric Kettle",
                 description: "1.5L electric kettle with auto shut-off.",
                 purchasePrice: 25.0,
                 retailPrice: 50.0,
                 stockQuantity: 200,
                 minQuantity: 30,
-                vatId: vats[1].id,
-                unitId: units[2].id,
-                classId: itemClasses[2].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Gaming Laptop",
                 description: "High-performance laptop for gaming.",
                 purchasePrice: 1000.0,
                 retailPrice: 1500.0,
                 stockQuantity: 15,
                 minQuantity: 1,
-                vatId: vats[0].id,
-                unitId: units[1].id,
-                classId: itemClasses[0].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Electric Scooter",
                 description: "Foldable electric scooter with long battery life.",
                 purchasePrice: 400.0,
                 retailPrice: 600.0,
                 stockQuantity: 20,
                 minQuantity: 2,
-                vatId: vats[1].id,
-                unitId: units[1].id,
-                classId: itemClasses[1].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Air Conditioner",
                 description: "Energy-efficient air conditioner.",
                 purchasePrice: 500.0,
                 retailPrice: 800.0,
                 stockQuantity: 10,
                 minQuantity: 1,
-                vatId: vats[1].id,
-                unitId: units[2].id,
-                classId: itemClasses[1].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Microwave Oven",
                 description: "Compact microwave oven with grill function.",
                 purchasePrice: 100.0,
                 retailPrice: 180.0,
                 stockQuantity: 50,
                 minQuantity: 5,
-                vatId: vats[0].id,
-                unitId: units[1].id,
-                classId: itemClasses[2].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Power Bank",
                 description: "20,000mAh portable power bank.",
                 purchasePrice: 20.0,
                 retailPrice: 50.0,
                 stockQuantity: 300,
                 minQuantity: 50,
-                vatId: vats[0].id,
-                unitId: units[2].id,
-                classId: itemClasses[0].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Webcam",
                 description: "1080p HD webcam with microphone.",
                 purchasePrice: 30.0,
                 retailPrice: 60.0,
                 stockQuantity: 120,
                 minQuantity: 10,
-                vatId: vats[1].id,
-                unitId: units[1].id,
-                classId: itemClasses[0].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Fitness Tracker",
                 description: "Track steps, calories, and sleep patterns.",
                 purchasePrice: 60.0,
                 retailPrice: 100.0,
                 stockQuantity: 80,
                 minQuantity: 8,
-                vatId: vats[0].id,
-                unitId: units[0].id,
-                classId: itemClasses[0].id
-            },
-            {
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }, {
                 label: "Coffee Maker",
                 description: "Automatic coffee maker with timer.",
                 purchasePrice: 70.0,
                 retailPrice: 150.0,
                 stockQuantity: 100,
                 minQuantity: 10,
-                vatId: vats[1].id,
-                unitId: units[2].id,
-                classId: itemClasses[2].id
-            },
-        ];
+                classLabel: "Électronique",
+                unitName: "Pièce"
+            }];
 
-
-        console.log('Seeding items...');
-
+        console.log(' 🔥 Seeding items...');
         for (const item of items) {
             const itemNumber = await generateItemNumber();
 
+            // Find the corresponding unit and item class
+            const unit = await prisma.unit.findFirst({
+                where: {name: item.unitName}
+            });
+
+            const itemClass = await prisma.itemClass.findFirst({
+                where: {label: item.classLabel}
+            });
+            // Check if the item already exists to avoid duplicates
             const existingItem = await prisma.item.findFirst({
                 where: {itemNumber},
             });
@@ -477,50 +356,66 @@ async function seedDatabase() {
                 await prisma.item.create({
                     data: {
                         itemNumber,
-                        ...item,
-                    },
+                        label: item.label,
+                        description: item.description,
+                        purchasePrice: item.purchasePrice,
+                        retailPrice: item.retailPrice,
+                        stockQuantity: item.stockQuantity,
+                        minQuantity: item.minQuantity,
+                        unitId: unit.id,
+                        classId: itemClass.id
+                    }
                 });
-                console.log(`Item "${item.label}" added with number ${itemNumber}.`);
-            } else {
-                console.log(`Item "${item.label}" already exists.`);
+                console.log(`Created NEW item "${item.label}" with item number ${itemNumber}`);
             }
         }
 
+        console.log(' 📦 Items seeded');
+        //endregion
+
+        //region SUPER_ADMIN
         // Add Super Admin user
-        const superAdminEmail = "bentouhami.faisal@gmail.com";
-        const existingSuperAdmin = await prisma.user.findUnique({
-            where: { email: superAdminEmail },
-        });
+        console.log('👥 Seeding users...');
+        const usersToSeed = [{
+            email: 'bentouhami.faisal@gmail.com',
+            role: 'SUPER_ADMIN',
+            firstName: 'Bentouhami',
+            lastName: 'Faisal',
+            password: 'Azerty1?',
+            phone: '+32456222054',
+            mobile: '+32456222054',
+            isVerified: true,
+            emailVerified: new Date(),
 
-        if (!existingSuperAdmin) {
-            const userNumber = await generateUniqueUserNumber("SUPER_ADMIN"); // Generate user number for SUPER_ADMIN
-            const superAdminData = {
-                userNumber, // Include the generated user number
-                firstName: "Bentouhami",
-                lastName: "Faisal",
-                name: "Bentouhami Faisal",
-                email: superAdminEmail,
-                phone: "+32456222054",
-                mobile: "+32456222054",
-                companyName: null,
-                vatNumber: null,
-                companyNumber: null,
-                exportNumber: null,
-                password: await saltAndHashPassword("Azerty1?"), // Securely hash password
-                role: "SUPER_ADMIN",
-                paymentTermDays: 0,
-                isEnterprise: false,
-                isVerified: true, // Mark as verified
-            };
+        }, {
+            email: 'family.zaki1@gmail.com',
+            role: 'ADMIN',
+            firstName: 'Family',
+            lastName: 'Zaki',
+            password: 'Azerty1?',
+            phone: '+32456123450',
+            mobile: '+32456123450',
+            isVerified: true,
+            emailVerified: new Date(),
 
-            await prisma.user.create({
-                data: superAdminData,
-            });
+        }, {
+            email: 'bentouhami.fa@gmail.com',
+            role: 'ACCOUNTANT',
+            firstName: 'Bentouhami',
+            lastName: 'Fa',
+            password: 'Azerty1?',
+            phone: '+32456987651',
+            mobile: '+32456987651',
+            isVerified: true,
+            emailVerified: new Date(),
 
-            console.log(`Super Admin user "${superAdminEmail}" created successfully with user number ${userNumber}.`);
-        } else {
-            console.log(`Super Admin user "${superAdminEmail}" already exists.`);
+        },];
+
+        for (const user of usersToSeed) {
+            await createUserIfNotExists(user);
         }
+
+        console.log('✅ Users seeded.');
 
         console.log('Database seeding completed successfully.');
     } catch (error) {
@@ -540,8 +435,7 @@ async function generateItemNumber() {
             itemNumber: {
                 startsWith: `ITM${year}${month}`,
             },
-        },
-        orderBy: {
+        }, orderBy: {
             itemNumber: 'desc',
         },
     });
@@ -594,8 +488,7 @@ async function generateUniqueUserNumber(userRole) {
             userNumber: {
                 startsWith: userPrefix,
             },
-        },
-        orderBy: {
+        }, orderBy: {
             userNumber: "desc",
         },
     });
@@ -611,6 +504,83 @@ async function generateUniqueUserNumber(userRole) {
     // Generate the new userNumber with zero-padded numeric part
     const userNumber = `${userPrefix}${nextNumber.toString().padStart(paddingLength, "0")}`;
     return userNumber;
+}
+
+/**
+ * Creates a user if they do not already exist.
+ * @param {Object} userData - The data of the user to create.
+ * @param {string} userData.email - The email of the user.
+ * @param {string} userData.role - The role of the user (e.g., "SUPER_ADMIN").
+ * @param {string} userData.firstName - The first name of the user.
+ * @param {string} userData.lastName - The last name of the user.
+ * @param {string} userData.password - The plain text password of the user.
+ * @param {string} [userData.phone] - The phone number of the user.
+ * @param {string} [userData.mobile] - The mobile number of the user.
+ * @param {boolean} [userData.isVerified] - Whether the user is verified.
+ * @param {boolean} [userData.isEnterprise] - Whether the user is an enterprise.
+ * @param {number} [userData.paymentTermDays] - Payment term days.
+ * @param {string} [userData.companyName] - The company name.
+ * @param {string} [userData.vatNumber] - The VAT number.
+ * @param {string} [userData.companyNumber] - The company number.
+ * @param {string} [userData.exportNumber] - The export number.
+ */
+async function createUserIfNotExists(userData) {
+    const {
+        email,
+        role,
+        firstName,
+        lastName,
+        password,
+        phone = null,
+        mobile = null,
+        isVerified = false,
+        isEnterprise = false,
+        paymentTermDays = 0,
+        companyName = null,
+        vatNumber = null,
+        companyNumber = null,
+        exportNumber = null,
+        emailVerified,
+    } = userData;
+
+    try {
+        const existingUser = await prisma.user.findUnique({
+            where: {email},
+        });
+
+        if (!existingUser) {
+            const userNumber = await generateUniqueUserNumber(role);
+            const hashedPassword = await saltAndHashPassword(password);
+
+            const newUser = await prisma.user.create({
+                data: {
+                    userNumber,
+                    firstName,
+                    lastName,
+                    name: `${firstName} ${lastName}`,
+                    email,
+                    phone,
+                    mobile,
+                    companyName,
+                    vatNumber,
+                    companyNumber,
+                    exportNumber,
+                    password: hashedPassword,
+                    role,
+                    paymentTermDays,
+                    isEnterprise,
+                    isVerified,
+                    emailVerified,
+                },
+            });
+
+            console.log(`✅ ${role.replace('_', ' ')} "${email}" created successfully with user number ${userNumber}.`);
+        } else {
+            console.log(`ℹ️ ${role.replace('_', ' ')} "${email}" already exists.`);
+        }
+    } catch (error) {
+        console.error(`❌ Error creating ${role.replace('_', ' ')} "${email}":`, error);
+    }
 }
 
 seedDatabase();

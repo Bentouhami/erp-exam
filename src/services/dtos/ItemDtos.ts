@@ -20,12 +20,11 @@ export interface ItemDTO {
     minQuantity: number;
     unitId: number;
     classId: number;
-    vatType: VatTypeDTO;
     unit: UnitDTO;
     itemClass: ItemClassDTO;
     stockMovements: StockMovementDTO[];
     invoiceDetails: InvoiceDetailsDTO[];
-    itemTaxes: ItemTaxDTO[];
+    itemTaxes?: ItemTaxDTO[];
 }
 //
 // export interface ItemCreateDTO extends Required<Omit<ItemDTO, "id">> {
@@ -44,7 +43,6 @@ export interface  ItemCreateDTO  {
     minQuantity: number;
     unitId: number;
     classId: number;
-    vatType: VatTypeDTO;
 }
 
 export interface ItemUpdateDTO extends Partial<Omit<ItemDTO, "id">> {

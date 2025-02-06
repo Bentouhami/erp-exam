@@ -1,20 +1,27 @@
-// path: src/components/customers/CustomerSelect.tsx
-
-import React, {useState} from 'react';
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,} from "@/components/ui/dialog";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type User = {
     id: string;
     firstName: string;
     lastName: string;
     userNumber: string;
-    vatNumber: string;
-    isEnterprise: boolean;
+    vatNumber?: string;
     name: string;
+    isEnterprise: boolean;
     paymentTermDays: number;
+    companyName?: string;
+    companyNumber?: string;
+    exportNumber?: string;
+    email: string;
+    phone?: string;
+    mobile?: string;
+    createdAt: string;
+    countryId?: number;
+    countryName?: string; // New field for display
 };
 
 interface CustomerSelectProps {
@@ -23,7 +30,7 @@ interface CustomerSelectProps {
     onSelect: (userId: string) => void;
 }
 
-export default function CustomerSelect({customersList, selectedUserId, onSelect}: CustomerSelectProps) {
+export default function CustomerSelect({ customersList, selectedUserId, onSelect }: CustomerSelectProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isOpen, setIsOpen] = useState(false);
 
@@ -31,7 +38,7 @@ export default function CustomerSelect({customersList, selectedUserId, onSelect}
         user.userNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.vatNumber && user.vatNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        user.vatNumber === searchTerm || user.isEnterprise === (searchTerm.toLowerCase() === 'enterprise') || user.isEnterprise === (searchTerm.toLowerCase() === 'individual')
+        (user.countryName && user.countryName.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const selectedUser = customersList.find(u => u.id === selectedUserId);
@@ -40,7 +47,10 @@ export default function CustomerSelect({customersList, selectedUserId, onSelect}
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left">
-                    {selectedUser ? `${selectedUser.name} (${selectedUser.userNumber})` : 'Select a customer'}
+                    {selectedUser
+                        ? `${selectedUser.name} (${selectedUser.userNumber}) - ${selectedUser.countryName || 'Unknown'}`
+                        : 'Select a customer'}
+
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -48,7 +58,7 @@ export default function CustomerSelect({customersList, selectedUserId, onSelect}
                     <DialogTitle>Select Customer</DialogTitle>
                 </DialogHeader>
                 <Input
-                    placeholder="Search by customer number, name, or VAT number..."
+                    placeholder="Search by customer number, name, VAT number, or country..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="mb-4"
@@ -57,10 +67,11 @@ export default function CustomerSelect({customersList, selectedUserId, onSelect}
                     <TableHeader>
                         <TableRow>
                             <TableHead>Customer Number</TableHead>
-                            <TableHead>Customer Type</TableHead>
+                            <TableHead>Type</TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>VAT Number</TableHead>
-                            <TableHead> Payment Terms</TableHead>
+                            <TableHead>Country</TableHead>
+                            <TableHead>Payment Terms</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -74,17 +85,15 @@ export default function CustomerSelect({customersList, selectedUserId, onSelect}
                                 }}
                             >
                                 <TableCell>{user.userNumber}</TableCell>
-                                <TableCell>
-                                    {user.isEnterprise ? 'Enterprise' : 'Individual'}
-                                </TableCell>
+                                <TableCell>{user.isEnterprise ? 'Enterprise' : 'Individual'}</TableCell>
                                 <TableCell>{user.name}</TableCell>
                                 <TableCell>{user.vatNumber || '-'}</TableCell>
+                                <TableCell>{user.countryName || '-'}</TableCell>
                                 <TableCell>{user.paymentTermDays || '-'}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
-
             </DialogContent>
         </Dialog>
     );

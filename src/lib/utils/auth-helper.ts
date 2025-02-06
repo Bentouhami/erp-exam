@@ -2,6 +2,7 @@
 import bcrypt from "bcryptjs";
 import { getSession } from "next-auth/react";
 import { toast } from "react-toastify";
+import {auth} from "@/auth/auth";
 
 /**
  * Hash a password with bcrypt
@@ -30,11 +31,12 @@ interface AuthCheckResult {
     isAuthenticated: boolean;
     userId?: string;
     email?: string;
+    role?: string;
     error?: string;
 }
 export async function checkAuthStatus(showToast: boolean = true): Promise<AuthCheckResult> {
     try {
-        const session = await getSession();
+        const session = await auth();
 
         if (!session) {
             if (showToast) {
@@ -49,8 +51,10 @@ export async function checkAuthStatus(showToast: boolean = true): Promise<AuthCh
         return {
             isAuthenticated: true,
             userId: session.user?.id,
-            email: session.user?.email!
+            email: session.user?.email!,
+            role: session.user?.role,
         };
+
     } catch (error) {
         if (showToast) {
             toast.error("Une erreur est survenue lors de la vérification de l'authentification");
@@ -67,3 +71,5 @@ export async function getCurrentUserId(): Promise<string | null> {
     const { userId } = await checkAuthStatus(false);
     return userId || null;
 }
+
+

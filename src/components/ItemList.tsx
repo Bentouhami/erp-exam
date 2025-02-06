@@ -1,3 +1,5 @@
+// path: src/components/ItemList.tsx
+
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
@@ -25,11 +27,6 @@ type Item = {
     description: string;
     retailPrice: number;
     purchasePrice: number;
-    vat: {
-        id: number;
-        vatType: string;
-        vatPercent: number;
-    };
     unit: {
         id: number;
         name: string;
@@ -102,11 +99,6 @@ export default function ItemList() {
             );
         }
 
-        // Apply VAT filter
-        if (selectedVat) {
-            filtered = filtered.filter((item) => item.vat.id.toString() === selectedVat);
-        }
-
         // Apply Unit filter
         if (selectedUnit) {
             filtered = filtered.filter((item) => item.unit.id.toString() === selectedUnit);
@@ -156,22 +148,35 @@ export default function ItemList() {
 
     const handleDeleteItem = async (itemId: number) => {
         {
+            console.log("log ====> itemId in handleDeleteItem function in path src/components/ItemList.tsx:", itemId);
+
             try {
+                setLoading(true);
                 const response = await axios.delete(`${API_DOMAIN}/items/${itemId}`);
+
                 if (response.status !== 200 || !response.data) {
+
                     throw new Error('Failed to delete item');
                 }
-                toast.success('Item deleted successfully');
-                fetchItems();
+                const data = await response.data;
+                console.log("log ====> data in handleDeleteItem function in path src/components/ItemList.tsx:", data);
+
+                setTimeout(() => {
+                    toast.success(`${data.message}`);
+                }, 2000);
+
+                await fetchItems();
+                setLoading(false);
             } catch (error) {
                 console.error('Error deleting item:', error);
                 toast.error('Failed to delete item');
+                setLoading(false);
             }
         }
     };
 
     // Extract unique VATs, Units, and Classes
-    const uniqueVats = Array.from(new Map(items.map((item) => [item.vat.id, item.vat])).values());
+    // const uniqueVats = Array.from(new Map(items.map((item) => [item.vatRate?.vatPercent!.toString(), item.vatRate])).values());
     const uniqueUnits = Array.from(new Map(items.map((item) => [item.unit.id, item.unit])).values());
     const uniqueClasses = Array.from(new Map(items.map((item) => [item.itemClass.id, item.itemClass])).values());
 
@@ -192,19 +197,19 @@ export default function ItemList() {
                         className="max-w-sm"
                     />
 
-                    {/* VAT Filter */}
-                    <select
-                        value={selectedVat}
-                        onChange={(e) => setSelectedVat(e.target.value)}
-                        className="max-w-sm"
-                    >
-                        <option value="">All VAT Types</option>
-                        {uniqueVats.map((vat) => (
-                            <option key={vat.id} value={vat.id}>
-                                {vat.vatPercent}% ({vat.vatType})
-                            </option>
-                        ))}
-                    </select>
+                    {/*/!* VAT Filter *!/*/}
+                    {/*<select*/}
+                    {/*    value={selectedVat}*/}
+                    {/*    onChange={(e) => setSelectedVat(e.target.value)}*/}
+                    {/*    className="max-w-sm"*/}
+                    {/*>*/}
+                    {/*    <option value="">All VAT Types</option>*/}
+                    {/*    {uniqueVats.map((vat) => (*/}
+                    {/*        <option key={vat.id} value={vat.id}>*/}
+                    {/*            {vat.vatPercent}% ({vat.vatType})*/}
+                    {/*        </option>*/}
+                    {/*    ))}*/}
+                    {/*</select>*/}
 
                     {/* Unit Filter */}
                     <select
@@ -270,7 +275,7 @@ export default function ItemList() {
                             <TableHead>Description</TableHead>
                             <TableHead>Retail Price (€)</TableHead>
                             <TableHead>Purchase Price (€)</TableHead>
-                            <TableHead>VAT</TableHead>
+                            {/*<TableHead>VAT</TableHead>*/}
                             <TableHead>Unit</TableHead>
                             <TableHead>Class</TableHead>
                             <TableHead>Stock</TableHead>
@@ -285,9 +290,9 @@ export default function ItemList() {
                                 <TableCell>{item.description}</TableCell>
                                 <TableCell>{item.retailPrice.toFixed(2)}</TableCell>
                                 <TableCell>{item.purchasePrice.toFixed(2)}</TableCell>
-                                <TableCell>
-                                    {item.vat.vatPercent}% ({item.vat.vatType})
-                                </TableCell>
+                                {/*<TableCell>*/}
+                                {/*    {item.vatRate.vatPercent}% ({item.vatRate.vatType})*/}
+                                {/*</TableCell>*/}
                                 <TableCell>{item.unit.name}</TableCell>
                                 <TableCell>{item.itemClass.label}</TableCell>
                                 <TableCell>

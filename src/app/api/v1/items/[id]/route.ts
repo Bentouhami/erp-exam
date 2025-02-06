@@ -1,7 +1,11 @@
 // path: src/app/api/v1/items/[id]/route.ts
 
 import {NextRequest, NextResponse} from 'next/server';
-import prisma from '@/lib/db';
+import prisma from "@/lib/db";
+import {checkAuthStatus} from "@/lib/utils/auth-helper";
+import {ItemStatusDTO, MovementTypeDTO} from "@/services/dtos/EnumsDtos";
+import {createStockMovement} from "@/services/backend_Services/MovementStockService";
+import {setItemStatus} from "@/services/backend_Services/ItemService";
 
 /**
  * GET a single item by ID
@@ -17,7 +21,6 @@ export async function GET(request: NextRequest, {params}: { params: { id: string
         const item = await prisma.item.findUnique({
             where: {id: parseInt(params.id)},
             include: {
-                vat: true,
                 unit: true,
                 itemClass: true,
                 itemTaxes: {include: {utax: true}},
@@ -50,12 +53,27 @@ export async function PUT(request: NextRequest, {params}: { params: { id: string
     if (request.method !== 'PUT') {
         return new Response('Method not allowed', {status: 405});
     }
+    const {isAuthenticated, userId, email, role} = await checkAuthStatus();
+    if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return NextResponse.json({error: 'You must be an admin.'}, {status: 401});
+
 
     try {
         const body = await request.json();
 
-        console.log('received data from PUT request in path src/app/api/v1/items/[id]/route.ts:', body);
+        console.log("log ====> data received in PUT function for item: ", body)
+        // get current item from db before updating
+        const item = await prisma.item.findUnique({
+            where: {id: parseInt(params.id)},
+            select: {
+                id: true,
+                stockQuantity: true,
+            }
+        });
 
+        if (!item) return NextResponse.json({error: 'Item not found'}, {status: 401});
+
+        // update the item
         const updatedItem = await prisma.item.update({
             where: {id: parseInt(params.id)},
             data: {
@@ -64,7 +82,6 @@ export async function PUT(request: NextRequest, {params}: { params: { id: string
                 description: body.description,
                 retailPrice: body.retailPrice,
                 purchasePrice: body.purchasePrice,
-                vat: {connect: {id: parseInt(body.vatId)}}, // Convert to integer
                 unit: {connect: {id: parseInt(body.unitId)}}, // Convert to integer
                 itemClass: {connect: {id: parseInt(body.classId)}}, // Convert to integer
                 itemTaxes: {
@@ -74,8 +91,40 @@ export async function PUT(request: NextRequest, {params}: { params: { id: string
                         price: 0,
                     })),
                 },
+                stockQuantity: body.stockQuantity,
+                minQuantity: body.minQuantity
             },
+            select: {
+                id: true,
+                stockQuantity: true,
+            }
         });
+
+        if (!updatedItem) return NextResponse.json({error: 'Item not found'}, {status: 401});
+
+        if (!userId) {
+            return NextResponse.json({error: 'You are not authorized to update this item'}, {status: 401});
+        }
+
+        // get the movement type
+        let currentStockMovementType: MovementTypeDTO = MovementTypeDTO.SALE;
+        if (body.stockQuantity > item.stockQuantity) {
+            currentStockMovementType = MovementTypeDTO.PURCHASE;
+        } else if (body.stockQuantity < item.stockQuantity) {
+            currentStockMovementType = MovementTypeDTO.SALE;
+        }
+
+        // create the stock movement
+        const StockMovementCreateDTO = {
+            itemId: updatedItem.id,
+            userId,
+            quantity: updatedItem.stockQuantity,
+            movementType: currentStockMovementType,
+            date: new Date()
+        };
+
+        const createdStockMovement = createStockMovement(StockMovementCreateDTO);
+
 
         return NextResponse.json(updatedItem, {status: 200});
     } catch (error) {
@@ -87,34 +136,46 @@ export async function PUT(request: NextRequest, {params}: { params: { id: string
 /**
  * DELETE an item by ID
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, {params}: { params: { id: string } }) {
 
     if (request.method !== 'DELETE') {
         return new Response('Method not allowed', {status: 405});
     }
+    const {isAuthenticated, userId, email, role} = await checkAuthStatus();
+    if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return NextResponse.json({error: 'You must be an admin.'}, {status: 401});
+
+
     try {
         const itemId = parseInt(params.id);
-
-        // Check if the item is referenced in any InvoiceDetail
-        const invoiceDetails = await prisma.invoiceDetail.findMany({
-            where: { itemId },
+        // check if the admin or super admin is deleting the item
+        const admin = await prisma.user.findUnique({
+            where: {
+                id: userId,
+                email: email,
+            },
         });
 
-        if (invoiceDetails.length > 0) {
-            return NextResponse.json(
-                { error: 'Cannot delete item: it is referenced in one or more invoices.' },
-                { status: 400 }
-            );
-        }
+        if (!admin) return NextResponse.json({error: 'Admin not found'}, {status: 401});
+
+        if (admin.role !== 'ADMIN' && admin.role !== 'SUPER_ADMIN') return NextResponse.json({error: 'You must be an admin.'}, {status: 401});
+
+        // check if the item exists
+        const item = await prisma.item.findUnique({
+            where: {id: itemId}
+        });
+
+        if (!item) return NextResponse.json({error: 'Item not found'}, {status: 401});
 
         // If no references, proceed with deletion
-        await prisma.item.delete({
-            where: { id: itemId },
-        });
+        const setInactiveItem = await setItemStatus(itemId, ItemStatusDTO.INACTIVE);
 
-        return NextResponse.json({ message: 'Item deleted successfully' }, { status: 200 });
+        if (!setInactiveItem) return NextResponse.json({error: 'Failed to set item status to inactive'}, {status: 500});
+
+        return NextResponse.json({message: 'Item is now inactive'}, {status: 200});
+
     } catch (error) {
         console.error('Error deleting item:', error);
-        return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });
+        return NextResponse.json({error: 'Failed to delete item'}, {status: 500});
     }
 }

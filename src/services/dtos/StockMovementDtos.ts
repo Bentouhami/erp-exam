@@ -21,6 +21,17 @@ export interface StockMovementCreateDTO {
     userId: string;
     date: Date;
     quantity: number;
-    MovementTypeDTO: MovementTypeDTO;
+    movementType: MovementTypeDTO;
+    description?: string;
+}
+
+
+export interface UpdateStockMovementDTO {
+    id?: number;
+    itemId?: number;
+    userId?: string;
+    date?: Date;
+    quantity?: number;
+    movementType?: MovementTypeDTO;
     description?: string;
 }

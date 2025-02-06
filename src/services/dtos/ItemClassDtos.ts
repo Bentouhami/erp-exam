@@ -5,7 +5,6 @@ import {ItemDTO} from "@/services/dtos/ItemDtos";
 export interface ItemClassDTO {
     id: number;
     label: string;
-    items?: ItemDTO[];
 }
 
 export interface ItemClassCreateDTO {

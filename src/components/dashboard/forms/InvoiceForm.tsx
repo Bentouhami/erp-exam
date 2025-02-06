@@ -1,4 +1,4 @@
-// path: src/pages/invoices/new.tsx
+// path: src/components/dashboard/forms/InvoiceForm.tsx
 
 'use client'
 import React, {useEffect, useState} from 'react'
@@ -6,367 +6,292 @@ import {useRouter} from 'next/navigation'
 import {useFieldArray, useForm} from 'react-hook-form'
 import {zodResolver} from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import {Button} from "@/components/ui/button"
-import {Input} from "@/components/ui/input"
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form"
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table"
+import axios from 'axios'
 import {toast} from 'react-toastify'
-import axios from "axios";
-import {API_DOMAIN, DOMAIN} from "@/lib/utils/constants";
-import CustomerSelect from "@/components/customers/CustomerSelect";
-import {Delete, Plus, Save} from "lucide-react";
-import ItemSelect from "@/components/item-form/ItemSelect";
-import InvoiceTotals from "@/components/invoices/InvoiceTotals";
-import {Select} from "@/components/ui/select";
+import {Button} from '@/components/ui/button'
+import {Input} from '@/components/ui/input'
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from '@/components/ui/form'
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/components/ui/table'
+import CustomerSelect from '@/components/customers/CustomerSelect'
+import ItemSelect from '@/components/item-form/ItemSelect'
+import InvoiceTotals from '@/components/invoices/InvoiceTotals'
+import {Delete, Plus, Save} from 'lucide-react'
+import {API_DOMAIN, DOMAIN} from '@/lib/utils/constants'
 
+/* Schema definition with zod for essential fields */
 const invoiceSchema = z.object({
     id: z.string(),
     invoiceNumber: z.string(),
+    communicationVCS: z.string(),
     issuedAt: z.string(),
     dueDate: z.string(),
     userId: z.string(),
-    items: z.array(z.object({
-        itemId: z.string(),
-        quantity: z.number().min(1),
-        discount: z.number().min(0).max(100),
-    })),
-    totalAmount: z.number().min(0), // Renamed from totalHT
-    totalVatAmount: z.number().min(0), // Renamed from totalVAT
-    totalTtcAmount: z.number().min(0), // Renamed from totalTTC
-});
+    items: z.array(
+        z.object({
+            itemId: z.string(),
+            quantity: z.number().min(1),
+            discount: z.number().min(0).max(100),
+            vatPercent: z.number().optional(),
+        })
+    ),
+    totalAmount: z.number(),
+    totalVatAmount: z.number(),
+    totalTtcAmount: z.number(),
+})
 
-type InvoiceFormData = z.infer<typeof invoiceSchema>;
-
-type InvoiceDetailResponse = {
-    id: number;
-    item: {
-        id: number;
-        label: string;
-        retailPrice: string; // API returns this as a string
-    };
-    quantity: string; // API returns this as a string
-    discount: string; // API returns this as a string
-    unitPrice: string;
-    vatBaseAmount: string;
-    vatAmount: string;
-};
-
-
-type User = {
-    id: string;
-    firstName: string;
-    lastName: string;
-    userNumber: string;
-    vatNumber: string;
-    name: string;
-    isEnterprise: boolean;
-    paymentTermDays: number;
-};
-
-type Item = {
-    id: number;
-    itemNumber: string;
-    supplierReference?: string;
-    label: string;
-    description: string;
-    retailPrice: number;
-    purchasePrice: number;
-    stockQuantity: number;
-    minQuantity: number;
-
-    vat: {
-        id: number;
-        vatType: 'REDUCED' | 'STANDARD';
-        vatPercent: number;
-    };
-    unit: {
-        id: number;
-        name: string;
-    };
-    itemClass: {
-        id: number;
-        label: string;
-    };
-
-};
+type InvoiceFormData = z.infer<typeof invoiceSchema>
 
 interface InvoiceFormProps {
-    invoiceId?: number;
+    invoiceId?: number
 }
 
 export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
-    const [users, setUsers] = useState<User[]>([]);
-    const [items, setItems] = useState<Item[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [invoiceLoading, setInvoiceLoading] = useState(false); // Added state for invoice loading
-    const [totalHT, setTotalHT] = useState(0);
-    const [totalVAT, setTotalVAT] = useState(0);
-    const [totalTTC, setTotalTTC] = useState(0);
-    const router = useRouter();
+    const router = useRouter()
+    const [users, setUsers] = useState<any[]>([])
+    const [itemsList, setItemsList] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [totals, setTotals] = useState({totalHT: 0, totalVAT: 0, totalTTC: 0})
+    const [groupedVAT, setGroupedVAT] = useState<Record<string, { vatBaseAmount: number; vatAmount: number }>>({});
 
-
+    // Initialize the form with default values
     const form = useForm<InvoiceFormData>({
         resolver: zodResolver(invoiceSchema),
         defaultValues: {
             id: '',
             invoiceNumber: '',
+            communicationVCS: '',
             issuedAt: new Date().toISOString().split('T')[0],
             dueDate: new Date().toISOString().split('T')[0],
             userId: '',
-            items: [{itemId: '', quantity: 1, discount: 0}],
+            items: [{itemId: '', quantity: 1, discount: 0, vatPercent: 0}],
             totalAmount: 0,
             totalVatAmount: 0,
             totalTtcAmount: 0,
-        }
-    });
+        },
+    })
+    const selectedUserId = form.watch('userId');
 
-    // Fields for the items array in the form
+    // Manage dynamic items
     const {fields, append, remove} = useFieldArray({
         control: form.control,
-        name: "items",
-    });
+        name: 'items',
+    })
 
+    // Fetch customers and items; process customers to include country info.
     useEffect(() => {
-        fetchUsersAndItems();
+        const fetchData = async () => {
+            try {
+                const [usersRes, itemsRes] = await Promise.all([
+                    fetch(`${API_DOMAIN}/users/customers`),
+                    fetch(`${API_DOMAIN}/items`),
+                ])
+                const usersData = await usersRes.json()
+                // Process each user to extract countryId from their primary address (BILLING or HOME)
+                const processedUsers = usersData.map((user: any) => {
+                    const primaryAddress = user.userAddress?.find((addr: any) =>
+                        addr.addressType === 'BILLING' || addr.addressType === 'HOME'
+                    )
+                    return {
+                        ...user,
+                        countryId: primaryAddress?.address?.city?.country?.id || null,
+                        countryName: primaryAddress?.address?.city?.country?.name || 'Unknown Country',
+                        isEnterprise: user.isEnterprise,
+                    }
+                })
 
-    }, []);
+                setUsers(processedUsers)
 
+                const itemsData = await itemsRes.json()
+                setItemsList(itemsData)
+            } catch (error) {
+                toast.error('Failed to fetch users or items')
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchData()
+    }, [])
+
+
+    // Fetch invoice data (for edit) or generate a new invoice number and communication VCS (for create)
     useEffect(() => {
-        const fetchInvoiceOrGenerateNumber = async () => {
+        const fetchInvoiceData = async () => {
             if (invoiceId) {
-                // Fetch an existing invoice
                 try {
-                    await fetchInvoice(invoiceId)
-
+                    const res = await axios.get(`${API_DOMAIN}/invoices/${invoiceId}`)
+                    const invoiceData = res.data
+                    form.reset({
+                        id: invoiceData.id.toString(),
+                        invoiceNumber: invoiceData.invoiceNumber,
+                        communicationVCS: invoiceData.communicationVCS,
+                        issuedAt: invoiceData.issuedAt.split('T')[0],
+                        dueDate: invoiceData.dueDate.split('T')[0],
+                        userId: invoiceData.User.id,
+                        items: invoiceData.invoiceDetails.map((detail: any) => ({
+                            itemId: detail.item.id.toString(),
+                            quantity: Number(detail.quantity),
+                            discount: Number(detail.discount),
+                        })),
+                        totalAmount: Number(invoiceData.totalAmount),
+                        totalVatAmount: Number(invoiceData.totalVatAmount),
+                        totalTtcAmount: Number(invoiceData.totalTtcAmount),
+                    })
                 } catch (error) {
-                    console.error("Error fetching invoice:", error)
-                    toast.error("Failed to fetch invoice")
+                    toast.error('Failed to fetch invoice')
                 }
             } else {
-                // Generate a new invoice number
                 try {
-                    const response = await axios.get(`${API_DOMAIN}/invoices/generate-number`, {
-                        headers: {
-                            "Cache-Control": "no-cache",
-                            Pragma: "no-cache",
-                            Expires: "0",
-                        },
-                    })
-                    if (!response.data.invoiceNumber) {
-                        throw new Error("Failed to generate invoice number")
+                    const res = await axios.get(`${API_DOMAIN}/invoices/generate-number`)
+                    if (res.data.invoiceNumber && res.data.communicationVCS) {
+                        form.setValue('invoiceNumber', res.data.invoiceNumber);
+                        form.setValue('communicationVCS', res.data.communicationVCS);
                     }
-                    form.reset()
-                    form.setValue("invoiceNumber", response.data.invoiceNumber)
                 } catch (error) {
-                    console.error("Error generating invoice number:", error)
-                    toast.error("Failed to generate invoice number")
+                    toast.error('Failed to generate invoice number')
                 }
             }
-            setLoading(false)
         }
-
-        fetchInvoiceOrGenerateNumber()
+        fetchInvoiceData()
     }, [invoiceId, form])
 
-    const fetchUsersAndItems = async () => {
-        try {
-            const [usersResponse, itemsResponse] = await Promise.all([
-                fetch(`${API_DOMAIN}/users/customers`),
-                fetch(`${API_DOMAIN}/items`),
-            ]);
+    const calculateTotals = async () => {
+        const formItems = form.getValues("items");
+        let totalHT = 0;
+        let totalVAT = 0;
 
-            if (!usersResponse.ok || !itemsResponse.ok) {
-                throw new Error('Failed to fetch data');
+        // Object to store VAT breakdown
+        let groupedVAT: Record<string, { vatBaseAmount: number; vatAmount: number }> = {};
+
+        // Get the selected customer to extract country info.
+        const selectedUser = users.find((u) => u.id === form.getValues("userId"));
+        const countryId = selectedUser?.countryId;
+        const isEnterprise = selectedUser?.isEnterprise;
+
+        for (let i = 0; i < formItems.length; i++) {
+            const item = formItems[i];
+            const product = itemsList.find((p: any) => p.id.toString() === item.itemId);
+            if (product) {
+                const unitPrice = product.retailPrice;
+                const lineHT = unitPrice * item.quantity * (1 - item.discount / 100);
+
+                let vatPercent = item.vatPercent || product.vatPercent || 0;
+
+                // If no VAT is set (0) and we have a valid country, fetch the VAT rate.
+                if (vatPercent === 0 && countryId) {
+                    try {
+                        const vatRes = await fetch(
+                            `${API_DOMAIN}/vat-rates?countryId=${countryId}&itemClassId=${product.itemClass.id}&isEnterprise=${isEnterprise}`
+                        );
+                        const vatData = await vatRes.json();
+                        if (vatData && vatData.vatPercent !== undefined) {
+                            vatPercent = vatData.vatPercent;
+                            form.setValue(`items.${i}.vatPercent`, vatPercent);
+                        }
+                    } catch (error) {
+                        console.error("Error fetching VAT rate:", error);
+                        toast.error("Failed to fetch VAT rate");
+                    }
+                }
+
+                const lineVAT = lineHT * (vatPercent / 100);
+                totalHT += lineHT;
+                totalVAT += lineVAT;
+
+                // Group VAT amounts by percentage
+                const vatKey = `${vatPercent}%`;
+                if (!groupedVAT[vatKey]) {
+                    groupedVAT[vatKey] = { vatBaseAmount: 0, vatAmount: 0 };
+                }
+                groupedVAT[vatKey].vatBaseAmount += lineHT;
+                groupedVAT[vatKey].vatAmount += lineVAT;
             }
-
-            const usersData = await usersResponse.json();
-            const itemsData = await itemsResponse.json();
-
-            setUsers(usersData);
-            setItems(itemsData);
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            toast.error('Failed to fetch users and items');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchInvoice = async (id: number) => {
-        setInvoiceLoading(true);
-        try {
-            const response = await axios.get(`${API_DOMAIN}/invoices/${id}`);
-            if (response.status !== 200 || !response.data) {
-                throw new Error('Failed to fetch invoice');
-            }
-            const invoiceData = response.data;
-
-            // Transform the fetched invoice data to match the form schema
-            const transformedData: InvoiceFormData = {
-                id: invoiceData.id.toString(),
-                invoiceNumber: invoiceData.invoiceNumber,
-                issuedAt: invoiceData.issuedAt.split('T')[0],
-                dueDate: invoiceData.dueDate.split('T')[0],
-                userId: invoiceData.User.id,
-                items: invoiceData.invoiceDetails.map((detail: any) => ({
-                    itemId: detail.item.id.toString(),
-                    quantity: Number(detail.quantity),
-                    discount: Number(detail.discount), // Ensure discount is a number
-                })),
-                totalAmount: Number(invoiceData.totalAmount),
-                totalVatAmount: Number(invoiceData.totalVatAmount),
-                totalTtcAmount: Number(invoiceData.totalTtcAmount),
-            };
-
-            console.log('Transformed invoiceData:', transformedData);
-
-            form.reset(transformedData);
-        } catch (error) {
-            console.error('Error fetching invoice:', error);
-            toast.error('Failed to fetch invoice');
-        } finally {
-            setInvoiceLoading(false);
-        }
-    };
-
-
-    const validateInvoiceData = (invoiceData: InvoiceFormData) => {
-        const userExists = users.some(user => user.id === invoiceData.userId);
-        const validItems = invoiceData.items.every(item =>
-            items.some(i => i.id.toString() === item.itemId)
-        );
-
-        if (!userExists) {
-            throw new Error('The selected user does not exist.');
         }
 
-        if (!validItems) {
-            throw new Error('Some items in the invoice are invalid or missing.');
-        }
-
-        return true; // Validation passed
-    };
-
-
-    const generateInvoiceNumber = async () => {
-        try {
-            const response = await fetch(`${API_DOMAIN}/invoices/generate-number`);
-            if (!response.ok) {
-                throw new Error('Failed to generate invoice number');
-            }
-            const {invoiceNumber} = await response.json();
-            form.setValue('invoiceNumber', invoiceNumber);
-        } catch (error) {
-            console.error('Error generating invoice number:', error);
-            toast.error('Failed to generate invoice number');
-        }
-    };
-
-    const calculateDueDate = (userId: string) => {
-        const user = users.find(u => u.id === userId);
-        if (user) {
-            const issuedAt = new Date(form.getValues('issuedAt'));
-            const paymentTermDays = user.paymentTermDays || 0;
-            const dueDate = new Date(issuedAt);
-            dueDate.setDate(dueDate.getDate() + paymentTermDays);
-            form.setValue('dueDate', dueDate.toISOString().split('T')[0]);
-        }
-    };
-
-    const calculateTotals = () => {
-        const selectedItems = form.getValues('items'); // Type: InvoiceFormData['items']
-        let ht = 0; // Total HT (Hors Taxe)
-        let vat = 0; // Total VAT
-
-        // Iterate over selected items
-        selectedItems.forEach((item: InvoiceFormData['items'][number]) => {
-            const selectedItem = items.find(i => i.id.toString() === item.itemId); // Find the item in the state
-            if (selectedItem) {
-                const lineTotalHT = selectedItem.retailPrice * item.quantity * (1 - item.discount / 100);
-                const lineVAT = lineTotalHT * (selectedItem.vat.vatPercent / 100);
-                ht += lineTotalHT;
-                vat += lineVAT;
-            }
+        setTotals({
+            totalHT: parseFloat(totalHT.toFixed(2)),
+            totalVAT: parseFloat(totalVAT.toFixed(2)),
+            totalTTC: parseFloat((totalHT + totalVAT).toFixed(2)),
         });
 
-        // Update totals in the state
-        setTotalHT(parseFloat(ht.toFixed(2)));
-        setTotalVAT(parseFloat(vat.toFixed(2)));
-        setTotalTTC(parseFloat((ht + vat).toFixed(2)));
-
-        console.log('Calculated Totals:', {ht, vat, ttc: ht + vat});
+        // Store grouped VAT amounts for display
+        setGroupedVAT(groupedVAT);
     };
 
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'EUR',
-        }).format(amount);
-    };
+    useEffect(() => {
+        // When the customer changes, recalc the totals.
+        calculateTotals();
+    }, [selectedUserId]);
+    useEffect(() => {
+        // Recalculate totals whenever the items, selected customer, or items list change.
+        calculateTotals()
+    }, [form.watch('items'), form.watch('userId'), itemsList])
 
 
+    // Recalculate totals whenever the items or selected user change.
+    useEffect(() => {
+        const recalc = async () => {
+            await calculateTotals()
+        }
+        recalc()
+    }, [form.watch('items'), form.watch('userId'), itemsList])
+
+    // Handle form submission.
     const onSubmit = async (data: InvoiceFormData) => {
-        calculateTotals(); // Ensure totals are calculated before submission
-
         const updatedData = {
             ...data,
-            issuedAt: new Date(data.issuedAt).toISOString(), // Convert to ISO string
-            dueDate: new Date(data.dueDate).toISOString(), // Convert to ISO string
-            totalAmount: totalHT,
-            totalVatAmount: totalVAT,
-            totalTtcAmount: totalTTC,
-        };
-
-        console.log('Invoice data with totals in onSubmit in component InvoiceForm is:', updatedData);
-
+            issuedAt: new Date(data.issuedAt).toISOString(),
+            dueDate: new Date(data.dueDate).toISOString(),
+            totalAmount: totals.totalHT,
+            totalVatAmount: totals.totalVAT,
+            totalTtcAmount: totals.totalTTC,
+        }
         try {
             const url = invoiceId
-                ? `${API_DOMAIN}/invoices/${invoiceId}` // Include invoiceId in the URL for updates
-                : `${API_DOMAIN}/invoices`; // For creating new invoices
-
-            const method = invoiceId ? 'put' : 'post';
-
-            const response = await axios({
+                ? `${API_DOMAIN}/invoices/${invoiceId}`
+                : `${API_DOMAIN}/invoices`
+            const method = invoiceId ? 'put' : 'post'
+            const res = await axios({
                 url,
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 data: updatedData,
-            });
+            })
+            if (res.status === 200 || res.status === 201) {
+                toast.success(
+                    `Invoice ${invoiceId ? 'updated' : 'created'} successfully`
+                );
+                router.push(`${DOMAIN}/dashboard/invoices`)
 
-            if (response.status !== 200 && response.status !== 201) {
-                throw new Error('Failed to save invoice');
             }
+        } catch (error: any) {
+            // Check if the error has a response from Axios
+            if (error.response && error.response.data) {
+                const {error: errorMessage, itemLabel, availableStock, requiredStock} = error.response.data;
 
-            toast.success(`Invoice ${invoiceId ? 'updated' : 'created'} successfully`);
-
-            form.reset({
-                invoiceNumber: '',
-                issuedAt: new Date().toISOString().split('T')[0],
-                dueDate: new Date().toISOString().split('T')[0],
-                userId: '',
-                items: [{ itemId: '', quantity: 1, discount: 0 }],
-                totalAmount: 0,
-                totalVatAmount: 0,
-                totalTtcAmount: 0,
-            });
-
-            router.push(`${DOMAIN}/dashboard/invoices`);
-        } catch (error) {
-            console.error('Error saving invoice:', error);
+                if (errorMessage === "Not enough stock") {
+                    toast.error(`Not enough stock for item ${itemLabel}. Available: ${availableStock} you need ${requiredStock}`);
+                    return; // Exit early since we've handled the error
+                }
+            }
+            // For any other error, show a generic message
             toast.error('Failed to save invoice');
         }
-    };
-
-
-
-    if (loading) {
-        return <div>Loading...</div>;
     }
+
+    if (loading) return <div>Loading...</div>
+
+    // Helper function for currency formatting.
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'EUR',
+        }).format(amount)
 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {/* Invoice Number (read-only) */}
                 <FormField
                     control={form.control}
                     name="invoiceNumber"
@@ -382,17 +307,34 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                 />
                 <FormField
                     control={form.control}
-                    name="issuedAt"
+                    name="communicationVCS"
                     render={({field}) => (
                         <FormItem>
-                            <FormLabel>Issue Date</FormLabel>
+                            <FormLabel>Communication VCS</FormLabel>
                             <FormControl>
-                                <Input type="date" {...field} />
+                                <Input {...field} disabled/>
                             </FormControl>
                             <FormMessage/>
                         </FormItem>
                     )}
                 />
+
+                {/* Issue Date */}
+                <FormField
+                    control={form.control}
+                    name="issuedAt"
+                    render={({field}) => (
+                        <FormItem>
+                            <FormLabel>Issue Date</FormLabel>
+                            <FormControl>
+                                <Input {...field} disabled/>
+                            </FormControl>
+                            <FormMessage/>
+                        </FormItem>
+                    )}
+                />
+
+                {/* Due Date */}
                 <FormField
                     control={form.control}
                     name="dueDate"
@@ -419,7 +361,7 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                                 selectedUserId={field.value}
                                 onSelect={(value) => {
                                     field.onChange(value);
-                                    calculateDueDate(value);
+                                    calculateTotals(); // Trigger recalculation right after customer changes
                                 }}
                             />
                             <FormMessage/>
@@ -427,165 +369,141 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                     )}
                 />
 
-
-                {/* Items Section */}
+                {/* Items Table */}
                 <div>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Line #</TableHead>
+                                <TableHead>#</TableHead>
                                 <TableHead>Item</TableHead>
                                 <TableHead>Quantity</TableHead>
                                 <TableHead>Discount (%)</TableHead>
                                 <TableHead>Unit Price</TableHead>
-                                <TableHead>Total (HT)</TableHead>
+                                <TableHead>Total HT</TableHead>
                                 <TableHead>VAT %</TableHead>
-                                <TableHead>Total (VAT)</TableHead>
-                                <TableHead>Total (TTC)</TableHead>
+                                <TableHead>Total VAT</TableHead>
+                                <TableHead>Total TTC</TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {fields.map((field, index) => (
-                                <TableRow key={field.id}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>
-                                        <FormField
-                                            control={form.control}
-                                            name={`items.${index}.itemId`}
-                                            render={({ field }) => (
-                                                <FormItem>
+                            {fields.map((field, index) => {
+                                const selectedProduct = itemsList.find(
+                                    (p: any) =>
+                                        p.id.toString() === form.getValues(`items.${index}.itemId`)
+                                )
+                                const unitPrice = selectedProduct ? selectedProduct.retailPrice : 0
+                                const discount = form.getValues(`items.${index}.discount`) || 0
+                                const quantity = form.getValues(`items.${index}.quantity`) || 0
+                                const lineHT = unitPrice * quantity * (1 - discount / 100)
+                                const vatValue = Number(
+                                    form.getValues(`items.${index}.vatPercent`) ||
+                                    selectedProduct?.vatPercent ||
+                                    0
+                                );
+                                const lineVAT = lineHT * (vatValue / 100)
+                                return (
+                                    <TableRow key={field.id}>
+                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell>
+                                            <FormField
+                                                control={form.control}
+                                                name={`items.${index}.itemId`}
+                                                render={({field}) => (
                                                     <ItemSelect
-                                                        items={items}
+                                                        items={itemsList}
                                                         selectedItemId={field.value}
-                                                        onSelect={(itemId) => {
-                                                            field.onChange(itemId);
-                                                            const selectedItem = items.find((i) => i.id.toString() === itemId);
-                                                            if (selectedItem) {
-                                                                form.setValue(`items.${index}.quantity`, 1);
-                                                                form.setValue(`items.${index}.discount`, 0);
-                                                                calculateTotals();
-                                                            }
+                                                        onSelect={(value) => {
+                                                            field.onChange(value);
+                                                            calculateTotals(); // Trigger recalculation immediately
                                                         }}
+                                                        onItemSelected={() => calculateTotals()}
                                                     />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <FormField
-                                            control={form.control}
-                                            name={`items.${index}.quantity`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormControl>
-                                                        <Input
-                                                            type="number"
-                                                            {...field}
-                                                            onChange={(e) => {
-                                                                field.onChange(parseInt(e.target.value));
-                                                                calculateTotals();
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <FormField
-                                            control={form.control}
-                                            name={`items.${index}.discount`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormControl>
-                                                        <Input
-                                                            type="number"
-                                                            {...field}
-                                                            onChange={(e) => {
-                                                                field.onChange(parseFloat(e.target.value));
-                                                                calculateTotals();
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </TableCell>
+                                                )}
+                                            />
 
-                                    <TableCell>
-                                        {items.find(i => i.id.toString() === field.itemId)?.retailPrice || 0} €
-                                    </TableCell>
+                                        </TableCell>
+                                        <TableCell>
+                                            <FormField
+                                                control={form.control}
+                                                name={`items.${index}.quantity`}
+                                                render={({field}) => (
+                                                    <Input
+                                                        type="number"
+                                                        min="1"
+                                                        {...field}
+                                                        onChange={(e) =>
+                                                            field.onChange(parseInt(e.target.value))
+                                                        }
+                                                    />
+                                                )}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <FormField
+                                                control={form.control}
+                                                name={`items.${index}.discount`}
+                                                render={({field}) => (
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        max="100"
+                                                        {...field}
+                                                        onChange={(e) =>
+                                                            field.onChange(parseFloat(e.target.value))
+                                                        }
+                                                    />
+                                                )}
+                                            />
+                                        </TableCell>
+                                        <TableCell>{unitPrice.toFixed(2)} €</TableCell>
+                                        <TableCell>{lineHT.toFixed(2)} €</TableCell>
+                                        <TableCell>
+                                            {Number(
+                                                form.watch(`items.${index}.vatPercent`) ||
+                                                selectedProduct?.vatPercent ||
+                                                0
+                                            ).toFixed(2)}%
+                                        </TableCell>
 
-                                    <TableCell>
-                                        {(() => {
-                                            const selectedItem = items.find(i => i.id.toString() === field.itemId);
-                                            if (selectedItem) {
-                                                const unitPrice = selectedItem.retailPrice;
-                                                const discount = form.getValues(`items.${index}.discount`);
-                                                const quantity = form.getValues(`items.${index}.quantity`);
-                                                return (unitPrice * quantity * (1 - discount / 100)).toFixed(2);
-                                            }
-                                            return '0.00';
-                                        })()} €
-                                    </TableCell>
+                                        <TableCell>{lineVAT.toFixed(2)} €</TableCell>
+                                        <TableCell>{(lineHT + lineVAT).toFixed(2)} €</TableCell>
+                                        <TableCell>
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                onClick={() => remove(index)}
+                                            >
+                                                <Delete className="mr-2 h-4 w-4"/> Remove
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })}
 
-                                    {/* VAT % Column */}
-                                    <TableCell>
-                                        {(() => {
-                                            const selectedItem = items.find(i => i.id.toString() === field.itemId);
-                                            return selectedItem ? `${selectedItem.vat.vatPercent}%` : 'N/A';
-                                        })()}
-                                    </TableCell>
-
-                                    <TableCell>
-                                        {(() => {
-                                            const selectedItem = items.find(i => i.id.toString() === field.itemId);
-                                            if (selectedItem) {
-                                                const vatBaseAmount = selectedItem.retailPrice * field.quantity * (1 - field.discount / 100);
-                                                const vatAmount = vatBaseAmount * selectedItem.vat.vatPercent / 100;
-                                                return vatAmount.toFixed(2);
-                                            }
-                                            return '0.00';
-                                        })()} €
-                                    </TableCell>
-
-                                    <TableCell>
-                                        {(() => {
-                                            const selectedItem = items.find(i => i.id.toString() === field.itemId);
-                                            if (selectedItem) {
-                                                const vatBaseAmount = selectedItem.retailPrice * field.quantity * (1 - field.discount / 100);
-                                                const vatAmount = vatBaseAmount * selectedItem.vat.vatPercent / 100;
-                                                return (vatBaseAmount + vatAmount).toFixed(2);
-                                            }
-                                            return '0.00';
-                                        })()} €
-                                    </TableCell>
-
-                                    <TableCell>
-                                        <Button type="button" variant="destructive" onClick={() => remove(index)}>
-                                            <Delete className="mr-2 h-4 w-4" /> Remove
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
                         </TableBody>
                     </Table>
-
-                    <Button type="button" onClick={() => append({itemId: '', quantity: 1, discount: 0})}>
+                    <Button
+                        type="button"
+                        onClick={() => append({itemId: '', quantity: 1, discount: 0})}
+                    >
                         <Plus className="mr-2 h-4 w-4"/> Add Item
                     </Button>
                 </div>
 
                 {/* Totals Section */}
-                <InvoiceTotals totalHT={formatCurrency(totalHT)} totalVAT={formatCurrency(totalVAT)}
-                               totalTTC={formatCurrency(totalTTC)}/>
+                <InvoiceTotals
+                    totalHT={formatCurrency(totals.totalHT)}
+                    totalVAT={formatCurrency(totals.totalVAT)}
+                    totalTTC={formatCurrency(totals.totalTTC)}
+                    groupedVAT={groupedVAT}
+                />
 
-
+                {/* Submit Button */}
                 <Button type="submit">
                     <Save className="mr-2 h-4 w-4"/> Save Invoice
                 </Button>
             </form>
         </Form>
-    );
+    )
 }

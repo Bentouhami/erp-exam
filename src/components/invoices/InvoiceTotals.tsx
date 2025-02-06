@@ -1,4 +1,5 @@
-import React from 'react';
+// path: src/components/invoices/InvoiceTotals.tsx
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 
 const InvoiceTotals = ({
@@ -16,17 +17,17 @@ const InvoiceTotals = ({
         <Card className="w-full max-w-md ml-auto">
             <CardContent className="pt-6">
                 <div className="space-y-2">
-                    {/* Ensure groupedVAT is not undefined */}
+                    {/* Display VAT breakdown per rate */}
                     {Object.entries(groupedVAT ?? {}).map(([rate, details]) => (
                         <div key={rate} className="space-y-1">
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-600">Base {rate}%:</span>
+                                <span className="text-gray-600">Base {rate}:</span>
                                 <span className="font-medium">
                                     {details.vatBaseAmount.toFixed(2)} €
                                 </span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-600">VAT {rate}%:</span>
+                                <span className="text-gray-600">VAT {rate}:</span>
                                 <span className="font-medium">
                                     {details.vatAmount.toFixed(2)} €
                                 </span>

@@ -14,8 +14,6 @@ import PricingSection from "@/components/item-form/PricingSection";
 import { API_DOMAIN } from "@/lib/utils/constants";
 import QuantitySection from "@/components/item-form/QuantitySection";
 import axios from 'axios';
-import VatsDropDown from "@/components/dashboard/dropdowns/VatsDropDown";
-import CountriesDropDown from "@/components/dashboard/dropdowns/CountriesDropDown";
 
 const itemSchema = z.object({
     itemNumber: z.string(),
@@ -23,8 +21,6 @@ const itemSchema = z.object({
     description: z.string().optional(),
     retailPrice: z.number().min(0, 'Retail price must be a positive number'),
     purchasePrice: z.number().min(0, 'Purchase price must be a positive number'),
-    countryId: z.string().min(1, 'Country is required'),
-    vatId: z.string().min(1, 'VAT is required'),
     unitId: z.string().min(1, 'Unit is required'),
     classId: z.string().min(1, 'Class is required'),
     stockQuantity: z.number().min(0, 'Stock quantity must be a non-negative number'),
@@ -51,8 +47,6 @@ export default function ItemForm({ itemId }: ItemFormProps) {
             description: '',
             purchasePrice: 0,
             retailPrice: 0,
-            countryId: '',
-            vatId: '',
             unitId: '',
             classId: '',
             stockQuantity: 0,
@@ -60,20 +54,10 @@ export default function ItemForm({ itemId }: ItemFormProps) {
         },
     });
 
-    const countryId = form.watch('countryId');
-
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch the list of countries
-                const countriesResponse = await axios.get(`${API_DOMAIN}/countries`);
-                // Check if the response data is an array or needs unwrapping
-                const countriesData = Array.isArray(countriesResponse.data)
-                    ? countriesResponse.data
-                    : countriesResponse.data.data; // Adjust based on actual API structure
-                setCountries(countriesData || []); // Fallback to empty array
 
-                // Fetch item data or generate item number
                 if (itemId) {
                     await fetchItem(itemId);
                 } else {
@@ -98,14 +82,12 @@ export default function ItemForm({ itemId }: ItemFormProps) {
             const itemData = await response.json();
             form.reset({
                 ...itemData,
-                vatId: itemData.vat?.id?.toString() || '',
                 unitId: itemData.unit?.id?.toString() || '',
                 classId: itemData.itemClass?.id?.toString() || '',
                 purchasePrice: parseFloat(itemData.purchasePrice) || 0,
                 retailPrice: parseFloat(itemData.retailPrice) || 0,
                 stockQuantity: parseInt(itemData.stockQuantity) || 0,
                 minQuantity: parseInt(itemData.minQuantity) || 0,
-                countryId: itemData.country?.id?.toString() || '',
             });
         } catch (error) {
             console.error('Error fetching item:', error);
@@ -124,6 +106,8 @@ export default function ItemForm({ itemId }: ItemFormProps) {
     };
 
     const onSubmit = async (data: ItemFormData) => {
+        console.log("log ===> data:", data);
+
         try {
             const response = await fetch(`${API_DOMAIN}/items/${itemId || ''}`, {
                 method: itemId ? 'PUT' : 'POST',
@@ -131,8 +115,12 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                 body: JSON.stringify(data),
             });
             if (!response.ok) throw new Error('Failed to save item');
+
+
             toast.success(`Item ${itemId ? 'updated' : 'created'} successfully`);
             router.push('/dashboard/items');
+
+
         } catch (error) {
             console.error('Error saving item:', error);
             toast.error('Failed to save item');
@@ -154,43 +142,6 @@ export default function ItemForm({ itemId }: ItemFormProps) {
                 <div>
                     <ItemDetailsSection control={form.control} showItemNumber={!itemId} />
                     <PricingSection control={form.control} />
-
-                    {/* COUNTRIES SECTION */}
-                    <FormField
-                        control={form.control}
-                        name="countryId"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Country</FormLabel>
-                                <CountriesDropDown
-                                    countries={countries}
-                                    selectedCountryId={field.value}
-                                    onSelect={(countryId) => {
-                                        field.onChange(countryId);
-                                        form.setValue('vatId', '');
-                                    }}
-                                />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* VATS SECTION */}
-                    <FormField
-                        control={form.control}
-                        name="vatId"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>VAT</FormLabel>
-                                <VatsDropDown
-                                    selectedVatId={field.value}
-                                    countryId={form.getValues('countryId')}
-                                    onSelect={field.onChange}
-                                />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
 
                     {/* UNITS SECTION */}
                     <FormField

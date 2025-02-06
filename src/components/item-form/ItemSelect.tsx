@@ -15,9 +15,6 @@ type Item = {
     minQuantity: number;
     purchasePrice: number;
     supplierReference?: string; // Optional
-    vat: {
-        vatPercent: number;
-    };
     unit: {
         name: string;
     };
@@ -30,9 +27,10 @@ interface ItemSelectProps {
     items: Item[];
     selectedItemId?: string; // Optional prop for preselection
     onSelect: (itemId: string) => void;
+    onItemSelected?: () => void; // ✅ New prop to trigger recalculations
 }
 
-export default function ItemSelect({ items, selectedItemId, onSelect }: ItemSelectProps) {
+export default function ItemSelect({ items, selectedItemId, onSelect, onItemSelected }: ItemSelectProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isOpen, setIsOpen] = useState(false);
 
@@ -73,7 +71,6 @@ export default function ItemSelect({ items, selectedItemId, onSelect }: ItemSele
                             <TableHead>Description</TableHead>
                             <TableHead>Purchase Price (€)</TableHead>
                             <TableHead>Retail Price (€)</TableHead>
-                            <TableHead>VAT (%)</TableHead>
                             <TableHead>Unit</TableHead>
                             <TableHead>Item Class</TableHead>
                             <TableHead>Stock Quantity</TableHead>
@@ -86,6 +83,7 @@ export default function ItemSelect({ items, selectedItemId, onSelect }: ItemSele
                             <TableRow
                                 key={item.id}
                                 onClick={() => {
+                                    if (onItemSelected) onItemSelected();
                                     onSelect(item.id.toString());
                                     setIsOpen(false);
                                 }}
@@ -96,7 +94,6 @@ export default function ItemSelect({ items, selectedItemId, onSelect }: ItemSele
                                 <TableCell>{item.description}</TableCell>
                                 <TableCell>{item.purchasePrice.toFixed(2)}</TableCell>
                                 <TableCell>{item.retailPrice.toFixed(2)}</TableCell>
-                                <TableCell>{item.vat.vatPercent}%</TableCell>
                                 <TableCell>{item.unit.name}</TableCell>
                                 <TableCell>{item.itemClass.label}</TableCell>
                                 <TableCell>{item.stockQuantity}</TableCell>

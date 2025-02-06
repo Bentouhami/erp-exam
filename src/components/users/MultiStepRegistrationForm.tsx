@@ -1,32 +1,23 @@
 // path: src/components/users/MultiStepRegistrationForm.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { StepIndicator } from "./StepIndicator";
-import { BaseUserForm } from "./BaseUserForm";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import {
-    Form,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-    FormDescription, FormControl,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import React, {useEffect, useState} from "react";
+import {Button} from "@/components/ui/button";
+import {StepIndicator} from "./StepIndicator";
+import {BaseUserForm} from "./BaseUserForm";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {useForm} from "react-hook-form";
+import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
+import {Input} from "@/components/ui/input";
 import axios from "axios";
-import { API_DOMAIN } from "@/lib/utils/constants";
-import { useRouter } from "next/navigation";
-import { toast, ToastContainer } from "react-toastify";
+import {API_DOMAIN} from "@/lib/utils/constants";
+import {useRouter} from "next/navigation";
+import {toast, ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AddressForm from "@/components/dashboard/forms/AddressForm";
-import { ArrowRightIcon, Loader2 } from "lucide-react";
+import {ArrowLeftIcon, ArrowRightIcon, Loader2, SaveIcon} from "lucide-react";
 import IsEnterpriseForm from "@/components/dashboard/forms/IsEnterpriseForm";
-
-// Import your single, unified schema + type
-import { getUserSchema, CustomerFormData } from "@/lib/userSchemas";
+import {CustomerFormData, getUserSchema} from "@/lib/userSchemas";
 import apiClient from "@/lib/axiosInstance";
 
 interface MultiStepRegistrationFormProps {
@@ -46,10 +37,11 @@ type City = {
     countryId: number;
 };
 
-export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormProps) {
+export function MultiStepRegistrationForm({role}: MultiStepRegistrationFormProps) {
     const router = useRouter();
     const [step, setStep] = useState(1);
 
+    const [isLoading, setIsLoading] = useState(false);
     // For address
     const [selectedCountryId, setSelectedCountryId] = useState<string | number>("");
     const [selectedCityId, setSelectedCityId] = useState<string | number>("");
@@ -74,9 +66,11 @@ export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormPro
             try {
                 setLocationsLoading(true);
                 const response = await apiClient.get("/locations/all");
-                const { countries, cities } = response.data;
-                setCountries(countries);
-                setCities(cities);
+                const {countries, cities} = response.data;
+                setTimeout(() => {
+                    setCountries(countries);
+                    setCities(cities);
+                }, 100);
             } catch (err) {
                 console.error("Error fetching all locations:", err);
                 toast.error("Failed to load location data.");
@@ -84,6 +78,7 @@ export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormPro
                 setLocationsLoading(false);
             }
         }
+
         fetchLocations();
     }, []);
 
@@ -93,20 +88,28 @@ export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormPro
         // e.preventDefault();
 
         // Validate the fields on the current step, e.g. for step 1
+        setIsLoading(true);
         const isValid = await form.trigger(["firstName", "lastName", "email", "phone"]);
-        if (isValid) {
-            setStep(step + 1);
-        }
+
+        setTimeout(() => {
+            if (isValid) {
+                setStep(step + 1);
+                setIsLoading(false);
+            }
+        }, 100);
     };
 
     // Previous step
     const handlePrevious = () => {
-        setStep((prev) => prev - 1);
+        setIsLoading(true);
+        setTimeout(() => setStep((prev) => prev - 1), 100);
+        setIsLoading(false);
     };
 
     // Final form submission
     const onSubmit = async () => {
 
+        setIsLoading(true);
         console.log("Form submitted with data:", form.getValues());
 
         const payload = {
@@ -114,7 +117,7 @@ export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormPro
             role,
             countryId: selectedCountryId,
             cityId: selectedCityId,
-            address:{
+            address: {
                 street: form.getValues().street,
                 streetNumber: form.getValues().streetNumber,
                 complement: form.getValues().complement,
@@ -131,9 +134,11 @@ export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormPro
                 toast.success("User created successfully!");
                 setTimeout(() => router.push("/dashboard/users"), 3000);
             }
+            setIsLoading(false);
         } catch (error) {
             console.error("Error creating user:", error);
             toast.error("Failed to create user. Please try again.");
+            setIsLoading(false);
         }
     };
 
@@ -141,7 +146,7 @@ export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormPro
     if (locationsLoading) {
         return (
             <div className="flex items-center gap-2 p-4">
-                <Loader2 className="animate-spin" />
+                <Loader2 className="animate-spin"/>
                 <span>Loading countries & cities...</span>
             </div>
         );
@@ -151,16 +156,16 @@ export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormPro
         <div className="space-y-8 w-full max-w-2xl px-4 mx-auto">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(
-                    (data) => {
+                    async (data) => {
                         console.log("Data passed validation:", data);
-                        onSubmit();
+                        await onSubmit();
                     },
                     (errors) => {
                         console.log("Validation errors:", errors);
-                        // Possibly toast or do something so you see there's an error
+                        // Possibly toast or do something, so you see there's an error
                     }
                 )}>
-                    <StepIndicator currentStep={step} totalSteps={totalSteps} />
+                    <StepIndicator currentStep={step} totalSteps={totalSteps}/>
 
                     {/* Step 1: Personal/base info */}
                     {step === 1 && (
@@ -172,30 +177,29 @@ export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormPro
                             />
                         </div>
                     )}
-
                     {/* Step 2: Enterprise info (only if a role=CUSTOMER) */}
                     {step === 2 && role === "CUSTOMER" && (
                         <>
-                            <IsEnterpriseForm />
+                            <IsEnterpriseForm/>
                             <FormField
                                 control={form.control}
                                 name="vatNumber"
-                                render={({ field }) => (
+                                render={({field}) => (
                                     <FormItem>
                                         <FormLabel>VAT Number (Optional)</FormLabel>
                                         <FormControl>
                                             <Input placeholder="VAT Number" {...field} />
                                         </FormControl>
                                         <FormDescription>
-                                            If you have a VAT number, we will automatically calculate the VAT rate for you.
+                                            If you have a VAT number, we will automatically calculate the VAT rate for
+                                            you.
                                         </FormDescription>
-                                        <FormMessage />
+                                        <FormMessage/>
                                     </FormItem>
                                 )}
                             />
                         </>
                     )}
-
                     {/* Step 3 (or 2 for staff): Address info */}
                     {step === totalSteps && (
                         <AddressForm
@@ -208,26 +212,38 @@ export function MultiStepRegistrationForm({ role }: MultiStepRegistrationFormPro
                             cities={cities}
                         />
                     )}
-
                     <div className="flex justify-between">
                         {step > 1 && (
-                            <Button type="button" onClick={handlePrevious}>
-                                Previous
+                            <Button type="button" onClick={handlePrevious} className="mt-5 mr-auto">
+                                <ArrowLeftIcon className="inline-block mr-2"/> Previous
                             </Button>
                         )}
                         {step < totalSteps ? (
-                            <Button type="button" onClick={handleNext} className="ml-auto">
-                                Next <ArrowRightIcon className="inline-block ml-2" />
-                            </Button>
+                            <>
+                                {!isLoading &&
+                                    <Button type="button"  onClick={handleNext}
+                                            className=" mt-5 ml-auto"> Next
+                                        <ArrowRightIcon className="inline-block ml-2"/>
+                                    </Button>
+                                }
+
+                                {isLoading &&
+                                    <Button type="button"  disabled={true}
+                                            className=" mt-5 ml-auto"> Next
+                                        <Loader2
+                                            className="animate-spin"/>
+                                    </Button>
+                                }
+                            </>
                         ) : (
-                            <Button type="submit" className="ml-auto">
-                                Create {role}
+                            <Button type="submit" className="ml-auto mt-5">
+                                Create {role} <SaveIcon className="inline-block ml-2"/>
                             </Button>
                         )}
                     </div>
                 </form>
             </Form>
-            <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar theme="colored" />
+            <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar theme="colored"/>
         </div>
     );
 }
@@ -254,6 +270,6 @@ function getDefaultValues(
         complement: "",
         boxNumber: "",
         addressType: "HOME",
-        ...(role !== "CUSTOMER" && { password: "" }),
+        ...(role !== "CUSTOMER" && {password: ""}),
     };
 }

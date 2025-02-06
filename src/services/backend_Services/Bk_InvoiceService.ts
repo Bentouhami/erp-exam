@@ -1,5 +1,5 @@
 // src/services/backend_Services/Bk_InvoiceService.ts
-import prisma from '@/lib/db';
+import prisma from "@/lib/db";
 
 type PeriodSummary = {
     [period: string]: {

@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
                 paymentTermDays: userData.paymentTermDays,
                 isEnterprise: userData.isEnterprise,
                 isVerified: false,
-                UserAddress: {
+                userAddress: {
                     create: {
                         address: {
                             create: {

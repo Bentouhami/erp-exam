@@ -1,7 +1,7 @@
 // path: src/app/api/v1/item-taxes/route.ts
 
 import {NextRequest, NextResponse} from 'next/server';
-import prisma from '@/lib/db';
+import prisma from "@/lib/db";
 
 export async function GET(request: NextRequest) {
     if (request.method !== 'GET') return NextResponse.json({error: "Method not allowed."}, {status: 405})

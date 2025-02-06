@@ -49,7 +49,10 @@ const apiCalls = {
     },
 
     getUserByEmail: async (loginData: LoginDTO) => {
+        console.log("login data in getUserByEmail function is: ", loginData)
+
         const response = await axios.post(`${API_DOMAIN}/users/login`, loginData);
+
         return response.data;
     },
 

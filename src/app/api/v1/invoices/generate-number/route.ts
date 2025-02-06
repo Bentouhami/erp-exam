@@ -1,6 +1,6 @@
 // path: src/app/api/v1/invoices/generate-number/route.ts
 import {type NextRequest, NextResponse} from "next/server"
-import {generateInvoiceNumber} from "@/lib/utils/invoice"
+import {generateCommunicationVCS, generateInvoiceNumber} from "@/lib/utils/invoice"
 
 export async function GET(req: NextRequest) {
 
@@ -12,10 +12,11 @@ export async function GET(req: NextRequest) {
     let retries = 3
     while (retries > 0) {
         try {
-            const invoiceNumber = await generateInvoiceNumber()
-            if (!invoiceNumber) {
+            const {invoiceNumber, numericPart} = await generateInvoiceNumber()
+            const communicationVCS = generateCommunicationVCS(numericPart)
+            if (!invoiceNumber || !communicationVCS) {
                 return NextResponse.json(
-                    {message: "Invoice number not found"},
+                    {message: "Invoice number or communication VCS not found"},
                     {
                         status: 404,
                         headers: {
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
                 )
             }
             return NextResponse.json(
-                {invoiceNumber},
+                {invoiceNumber, communicationVCS},
                 {
                     status: 200,
                     headers: {

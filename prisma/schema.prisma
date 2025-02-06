@@ -143,7 +143,7 @@ model User {
   stockMovements StockMovement[] // History of stock movements related to the customer
   invoiceDetails InvoiceDetail[] // Details of invoices associated with the customer
 
-  UserAddress           UserAddress[]
+  userAddress           UserAddress[]
   UserVerificationToken UserVerificationToken[]
   Invoice               Invoice[]
 
@@ -300,9 +300,8 @@ model Country {
   updatedAt DateTime @updatedAt
 
   // Relations
-  cities  City[]
-  vats    Vat[]
-  vatRate VatRate[]
+  cities   City[]
+  vatRates VatRate[]
 
   @@map("countries")
 }
@@ -334,8 +333,6 @@ model Item {
   stockMovements StockMovement[] // Historique des mouvements de stock liés à l'article (ajout, retrait, etc.)
   invoiceDetails InvoiceDetail[] // Factures contenant cet article (ex. factures d'achat, factures de vente, etc.)
   itemTaxes      ItemTax[] // Taxes additionnelles appliquées à l'article (ex. taxe sur la valeur ajoutée, taxe sur le prix de vente, etc.)
-  vat            Vat?            @relation(fields: [vatId], references: [id])
-  vatId          Int?
 
   @@index([itemNumber, supplierReference, label]) // Index pour faciliter la recherche
   @@map("items")
@@ -343,16 +340,17 @@ model Item {
 
 // Invoice model
 model Invoice {
-  id              Int           @id @default(autoincrement())
-  userId          String
-  invoiceNumber   String        @unique @db.VarChar(20) // Numéro unique attribué à la facture pour l'identifier (ex. INV-1234567890123)
-  issuedAt        DateTime      @default(now()) // Date d'émission de la facture e.g. 2023-01-31  il représente la date à laquelle la facture est émise (émission).
-  dueDate         DateTime // Date limite de paiement pour la facture e.g. 2023-01-31  il représente la date à laquelle la facture est due, c'est-à-dire que la facture est payée (paiement).
-  flag_accounting Boolean       @default(false) // Indique si la facture est comptabilisée (true) ou non (false) dans le système. Par défaut, la facture est comptabilisée.
-  totalAmount     Decimal       @db.Decimal(10, 2) // Montant total hors taxes (HT) e.g. 10 euros
-  totalVatAmount  Decimal       @db.Decimal(10, 2) // Montant total de la TVA e.g. 10 euros
-  totalTtcAmount  Decimal       @db.Decimal(10, 2) // Montant total TTC (HT + TVA) e.g. 20 euros
-  status          InvoiceStatus @default(PENDING)
+  id               Int           @id @default(autoincrement())
+  userId           String
+  invoiceNumber    String        @unique @db.VarChar(20) // Numéro unique attribué à la facture pour l'identifier (ex. INV-1234567890123)
+  communicationVCS String // une communication VCS
+  issuedAt         DateTime      @default(now()) // Date d'émission de la facture e.g. 2023-01-31  il représente la date à laquelle la facture est émise (émission).
+  dueDate          DateTime // Date limite de paiement pour la facture e.g. 2023-01-31  il représente la date à laquelle la facture est due, c'est-à-dire que la facture est payée (paiement).
+  flag_accounting  Boolean       @default(false) // Indique si la facture est comptabilisée (true) ou non (false) dans le système. Par défaut, la facture est comptabilisée.
+  totalAmount      Decimal       @db.Decimal(10, 2) // Montant total hors taxes (HT) e.g. 10 euros
+  totalVatAmount   Decimal       @db.Decimal(10, 2) // Montant total de la TVA e.g. 10 euros
+  totalTtcAmount   Decimal       @db.Decimal(10, 2) // Montant total TTC (HT + TVA) e.g. 20 euros
+  status           InvoiceStatus @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -368,18 +366,18 @@ model Invoice {
 
 // InvoiceDetail model
 model InvoiceDetail {
-  id            Int     @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   invoiceId     Int
   itemId        Int // Référence à l'article facturé
   userId        String?
   lineNumber    Int // Numéro de ligne dans la facture
-  quantity      Int     @default(1) // Quantité de l'article facturé
-  discount      Decimal @default(0) @db.Decimal(5, 2) // Remise en pourcentage appliquée à la ligne
-  unitPrice     Decimal @db.Decimal(10, 2) // Prix unitaire hors taxes pour la ligne (ex. pour les articles de chaussures) eg. 10 euros
-  vatBaseAmount Decimal @db.Decimal(10, 2) // Montant HT pour la ligne avant la TVA
-  vatPercent    Decimal @db.Decimal(5, 2) // VAT rate applied (6% or 21%)
-  vatAmount     Decimal @db.Decimal(10, 2) // Montant de la TVA pour la ligne e.g. 10 euros
-  totalPrice    Decimal @db.Decimal(10, 2) // Montant TTC pour la ligne (HT + TVA) e.g. 20 euros
+  quantity      Int      @default(1) // Quantité de l'article facturé
+  discount      Decimal  @default(0) @db.Decimal(5, 2) // Remise en pourcentage appliquée à la ligne
+  unitPrice     Decimal  @db.Decimal(10, 2) // Prix unitaire hors taxes pour la ligne (ex. pour les articles de chaussures) eg. 10 euros
+  vatBaseAmount Decimal  @db.Decimal(10, 2) // Montant HT pour la ligne avant la TVA
+  vatPercent    Decimal? @db.Decimal(5, 2) // VAT rate applied (6% or 21%)
+  vatAmount     Decimal  @db.Decimal(10, 2) // Montant de la TVA pour la ligne e.g. 10 euros
+  totalPrice    Decimal  @db.Decimal(10, 2) // Montant TTC pour la ligne (HT + TVA) e.g. 20 euros
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -393,10 +391,11 @@ model InvoiceDetail {
 }
 
 model VatRate {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   countryId   Int // Link to the customer's country
   itemClassId Int // Link to the category of the item
-  vatPercent  Decimal @db.Decimal(5, 2) // VAT rate (e.g., 6.00 or 21.00)
+  vatPercent  Decimal  @db.Decimal(5, 2) // VAT rate (e.g., 6.00 or 21.00)
+  vatType     VatType? @default(STANDARD) // make it optional or required, as you prefer
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -430,12 +429,12 @@ model Payment {
 // ItemClass model representing the type of item (eg. Electronics, Furniture, etc.)
 model ItemClass {
   id        Int       @id @default(autoincrement())
-  label     String    @db.VarChar(50)
+  label     String    @unique @db.VarChar(50)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   // Relations
   items     Item[]
-  VatRate   VatRate[] // VAT rates per country
+  vatRates  VatRate[] // VAT rates per country
 
   @@map("item_classes")
 }
@@ -458,7 +457,7 @@ model Unit {
 model StockMovement {
   id           Int          @id @default(autoincrement())
   itemId       Int
-  userId       String? // Référence au client qui a effectué le mouvement de stock (si le mouvement est lié à un client)
+  userId       String? // Référence au User qui a effectué le mouvement de stock (si le mouvement est lié à un client)
   date         DateTime     @default(now()) // Date et heure du mouvement de stock
   quantity     Int // Quantité de stock liée au mouvement
   movementType MovementType
@@ -467,28 +466,11 @@ model StockMovement {
   updatedAt    DateTime     @updatedAt
 
   // Relations
-  item Item   @relation(fields: [itemId], references: [id])
-  User User[]
+  item Item  @relation(fields: [itemId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 
+  @@index([itemId, userId])
   @@map("stock_movements")
-}
-
-// Vat model
-model Vat {
-  id         Int     @id @default(autoincrement())
-  countryId  Int
-  vatPercent Decimal @db.Decimal(5, 2) // Percentage (e.g., 6.00 or 21.00)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  vatType VatType
-  country Country @relation(fields: [countryId], references: [id])
-  Item    Item[]
-
-  @@unique([id, countryId]) // Ensure unique VAT rates per id and country
-  @@map("vats")
 }
 
 // Utax model

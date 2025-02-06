@@ -1,6 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db';
-import { generateItemNumber } from '@/lib/utils/item';
+// path: src/app/api/v1/items/route.ts
+
+import {NextRequest, NextResponse} from 'next/server';
+import prisma from "@/lib/db";
+import {generateItemNumber} from '@/lib/utils/item';
+import {accessControlHelper} from "@/lib/utils/accessControlHelper";
+import {checkAuthStatus, getCurrentUserId} from "@/lib/utils/auth-helper";
+import {createStockMovement} from "@/services/backend_Services/MovementStockService";
+import {ItemStatusDTO, MovementTypeDTO} from "@/services/dtos/EnumsDtos";
 
 // Utility function for validation
 const validateItemData = (data: any) => {
@@ -8,7 +14,6 @@ const validateItemData = (data: any) => {
     if (!data.label) errors.push('Label is required.');
     if (!data.retailPrice || isNaN(data.retailPrice)) errors.push('Retail price must be a valid number.');
     if (!data.purchasePrice || isNaN(data.purchasePrice)) errors.push('Purchase price must be a valid number.');
-    if (!data.vatId) errors.push('VAT ID is required.');
     if (!data.unitId) errors.push('Unit ID is required.');
     if (!data.classId) errors.push('Class ID is required.');
     return errors;
@@ -17,33 +22,40 @@ const validateItemData = (data: any) => {
 export async function GET(request: NextRequest) {
 
     if (request.method !== 'GET') {
-        return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
+        return NextResponse.json({error: 'Method not allowed'}, {status: 405})
     }
+
+    const {isAuthenticated, role} = await checkAuthStatus();
+    if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return NextResponse.json({error: 'You must be an admin.'}, {status: 401});
+
     const search = request.nextUrl.searchParams.get('search');
     const sort = request.nextUrl.searchParams.get('sort') || 'itemNumber';
     const order = request.nextUrl.searchParams.get('order') || 'asc';
 
     try {
         const items = await prisma.item.findMany({
-            where: search
-                ? {
-                    OR: [
-                        { itemNumber: { contains: search, mode: 'insensitive' } },
-                        { label: { contains: search, mode: 'insensitive' } },
-                    ],
-                }
-                : undefined,
+            where: {
+                itemStatus: 'ACTIVE', // Only return active items
+                ...(search
+                    ? {
+                        OR: [
+                            { itemNumber: { contains: search, mode: 'insensitive' } },
+                            { label: { contains: search, mode: 'insensitive' } },
+                            { description: { contains: search, mode: 'insensitive' } },
+                        ],
+                    }
+                    : {}),
+            },
             orderBy: {
                 [sort]: order,
             },
             include: {
-                vat: true,
                 unit: true,
                 itemClass: true,
             },
         });
 
-        // console.log('Fetched items:', items);
 
         const formattedItems = items.map((item) => ({
             ...item,
@@ -59,12 +71,17 @@ export async function GET(request: NextRequest) {
         } else {
             console.error('Unknown error occurred while fetching items:', error);
         }
-        return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
+        return NextResponse.json({error: 'Failed to fetch items'}, {status: 500});
     }
 }
+
 export async function POST(request: NextRequest) {
     if (request.method !== 'POST') {
-        return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
+        return NextResponse.json({error: 'Method not allowed'}, {status: 405})
+    }
+
+    if (!accessControlHelper) {
+        return NextResponse.json({error: 'Access denied'}, {status: 403})
     }
 
     try {
@@ -75,7 +92,7 @@ export async function POST(request: NextRequest) {
         // Validate incoming data
         const validationErrors = validateItemData(body);
         if (validationErrors.length > 0) {
-            return NextResponse.json({ errors: validationErrors }, { status: 400 });
+            return NextResponse.json({errors: validationErrors}, {status: 400});
         }
 
         // Generate item number if not provided
@@ -84,26 +101,24 @@ export async function POST(request: NextRequest) {
         }
 
         // Parse IDs to integers
-        const vatId = parseInt(body.vatId, 10);
         const unitId = parseInt(body.unitId, 10);
         const classId = parseInt(body.classId, 10);
 
         // Fetch related records to ensure validity
-        const vat = await prisma.vat.findUnique({
-            where: { id: vatId },
-        });
         const unit = await prisma.unit.findUnique({
-            where: { id: unitId },
+            where: {id: unitId},
         });
         const itemClass = await prisma.itemClass.findUnique({
-            where: { id: classId },
+            where: {id: classId},
         });
 
-        if (!vat || !unit || !itemClass) {
-            return NextResponse.json({ error: 'Invalid vatId, unitId, or classId' }, { status: 400 });
+        if (!unit || !itemClass) {
+            console.log("log ===> invalid unitId or classId");
+            return NextResponse.json({error: 'Invalid unitId or classId'}, {status: 400});
         }
 
         console.log("log ===> after deleting countryId, vatId, unitId, classId from the body:", body);
+
 
         // Create the new item
         const newItem = await prisma.item.create({
@@ -115,25 +130,51 @@ export async function POST(request: NextRequest) {
                 purchasePrice: body.purchasePrice,
                 stockQuantity: body.stockQuantity || 0,
                 minQuantity: body.minQuantity || 0,
-                vat: {
-                    connect: { id: vat.id },
-                },
                 unit: {
-                    connect: { id: unit.id },
+                    connect: {id: unit.id},
                 },
                 itemClass: {
-                    connect: { id: itemClass.id },
+                    connect: {id: itemClass.id},
                 },
             },
         });
 
-        return NextResponse.json(newItem, { status: 201 });
+        if (!newItem) {
+            console.log("log ====> no item created is POST method");
+
+            return NextResponse.json({error: 'Failed to create item'}, {status: 500});
+        }
+        const { isAuthenticated , userId, email, role } = await checkAuthStatus();
+        if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
+        if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return NextResponse.json({error: 'You must be an admin.'}, {status: 401});
+
+        // check the admin exists
+        const admin = await prisma.user.findUnique({
+            where: {
+                id: userId,
+                email: email,
+            },
+        });
+
+        if(!admin) return NextResponse.json({error: 'Admin not found'}, {status: 401});
+
+        const StockMovementCreateDTO = {
+            itemId : newItem.id,
+            userId : admin.id,
+            quantity : newItem.stockQuantity,
+            movementType: MovementTypeDTO.PURCHASE,
+            date : new Date()
+        };
+
+        await  createStockMovement(StockMovementCreateDTO);
+
+        return NextResponse.json(newItem, {status: 201});
     } catch (error) {
         if (error instanceof Error) {
             console.error('Error creating item:', error.message);
         } else {
             console.error('Unknown error occurred while creating item:', error);
         }
-        return NextResponse.json({ error: 'Failed to create item' }, { status: 500 });
+        return NextResponse.json({error: 'Failed to create item'}, {status: 500});
     }
 }

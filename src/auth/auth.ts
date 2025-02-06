@@ -30,6 +30,7 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
 
                     // 2. Return the user if login is successful
                     if (user) {
+                        console.log("log ====> User found in Auth :" , user);
 
                         return {
                             id: user.id,

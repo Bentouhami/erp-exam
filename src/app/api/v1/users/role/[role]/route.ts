@@ -1,6 +1,6 @@
 // src/app/api/v1/users/role/[role]/route.ts
 import {NextRequest, NextResponse} from 'next/server';
-import prisma from '@/lib/db';
+import prisma from "@/lib/db";
 
 export async function GET(req: NextRequest, {params}: { params: { role: string } }) {
     if(req.method !== 'GET') return NextResponse.json({error: "Method not allowed."}, {status : 405})

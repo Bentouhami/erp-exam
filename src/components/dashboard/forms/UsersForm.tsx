@@ -10,6 +10,8 @@ import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {API_DOMAIN} from "@/lib/utils/constants";
+import apiClient from "@/lib/axiosInstance";
+import {useRouter} from "next/navigation";
 
 // Update the Zod schema to handle empty strings as null
 const userSchema = z.object({
@@ -51,6 +53,7 @@ export default function UsersForm({ userId }: { userId: string }) {
     const { data: session } = useSession()
     const [user, setUser] = useState<FormData | null>(null)
     const [loading, setLoading] = useState(true)
+    const router = useRouter();
 
     const {
         register,
@@ -114,14 +117,13 @@ export default function UsersForm({ userId }: { userId: string }) {
 
     const onSubmit = async (data: FormData) => {
         try {
-            const response = await fetch(`${API_DOMAIN}/users/${userId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            })
-
-            if (!response.ok) throw new Error('Failed to update user')
-            toast.success('User updated successfully')
+            const response = await apiClient.put(`${API_DOMAIN}/users/${userId}`, data);
+            if (response.status !== 201) throw new Error('Failed to update user');
+            toast.success('User updated successfully');
+            reset(data);
+            setLoading(false);
+            setUser(data);
+            router.push(`/dashboard/users`);
         } catch (error) {
             toast.error('Failed to update user')
         }
