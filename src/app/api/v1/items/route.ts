@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const {isAuthenticated, role} = await checkAuthStatus();
     if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
-    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return NextResponse.json({error: 'You must be an admin.'}, {status: 401});
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'ACCOUNTANT') return NextResponse.json({error: 'You must be an admin or an accountant to access this route.'}, {status: 401});
 
     const search = request.nextUrl.searchParams.get('search');
     const sort = request.nextUrl.searchParams.get('sort') || 'itemNumber';

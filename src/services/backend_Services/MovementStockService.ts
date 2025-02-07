@@ -3,9 +3,6 @@ import {MovementTypeDTO} from "@/services/dtos/EnumsDtos";
 import prisma from "@/lib/db";
 import {StockMovementCreateDTO, UpdateStockMovementDTO} from "@/services/dtos/StockMovementDtos";
 
-
-
-
 export async function createStockMovement(data: StockMovementCreateDTO, itemLabel: String)  {
     // switch (data.MovementTypeDTO) to set the right description
     switch (data.movementType) {

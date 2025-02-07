@@ -4,6 +4,7 @@ import {NextRequest, NextResponse} from 'next/server';
 import prisma from "@/lib/db";
 import {generateCommunicationVCS, generateInvoiceNumber} from "@/lib/utils/invoice";
 import {accessControlHelper} from "@/lib/utils/accessControlHelper";
+import {checkAuthStatus} from "@/lib/utils/auth-helper";
 
 /**
  * Fetch all invoices with optional filtering and sorting.
@@ -119,9 +120,9 @@ export async function POST(request: NextRequest) {
     if (request.method !== "POST") {
         return new Response("Method not allowed", {status: 405});
     }
-    if (!accessControlHelper) {
-        return NextResponse.json({error: 'Access denied'}, {status: 403})
-    }
+    const {isAuthenticated, role} = await checkAuthStatus();
+    if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'ACCOUNTANT') return NextResponse.json({error: 'You must be an admin or an accountant to access this route.'}, {status: 401});
 
     try {
         const body = await request.json();
