@@ -94,10 +94,6 @@ export async function PUT(request: NextRequest, {params}: { params: { id: string
                 stockQuantity: body.stockQuantity,
                 minQuantity: body.minQuantity
             },
-            select: {
-                id: true,
-                stockQuantity: true,
-            }
         });
 
         if (!updatedItem) return NextResponse.json({error: 'Item not found'}, {status: 401});
@@ -123,7 +119,7 @@ export async function PUT(request: NextRequest, {params}: { params: { id: string
             date: new Date()
         };
 
-        const createdStockMovement = createStockMovement(StockMovementCreateDTO);
+        const createdStockMovement = createStockMovement(StockMovementCreateDTO, updatedItem.label);
 
 
         return NextResponse.json(updatedItem, {status: 200});
