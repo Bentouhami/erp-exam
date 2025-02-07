@@ -3,7 +3,7 @@
 
 import RequireAuth from "@/components/auth/RequireAuth";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {DollarSign, FileText, Package, Users} from 'lucide-react';
+import { Euro, FileText, Package, Users} from 'lucide-react';
 import React, {useEffect, useState} from "react";
 import {API_DOMAIN} from "@/lib/utils/constants";
 import {useSession} from "next-auth/react";
@@ -47,6 +47,7 @@ export default function Dashboard() {
         };
 
         fetchSummaryData();
+
     }, [status, router, session, role]);
 
     return (
@@ -89,10 +90,10 @@ export default function Dashboard() {
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-muted-foreground"/>
+                                    <Euro className="h-4 w-4 text-muted-foreground"/>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">${summary.totalRevenue}</div>
+                                    <div className="text-2xl font-bold">€{summary.totalRevenue}</div>
                                     <p className="text-xs text-muted-foreground">+20.1% from last month</p>
                                 </CardContent>
                             </Card>
@@ -121,15 +122,15 @@ export default function Dashboard() {
                             <ul className="space-y-4">
                                 <li className="flex justify-between">
                                     <span>Invoice #INV-001</span>
-                                    <span>$2,300.00</span>
+                                    <span>€2,300.00</span>
                                 </li>
                                 <li className="flex justify-between">
                                     <span>Invoice #INV-002</span>
-                                    <span>$1,200.00</span>
+                                    <span>€1,200.00</span>
                                 </li>
                                 <li className="flex justify-between">
                                     <span>Invoice #INV-003</span>
-                                    <span>$3,450.00</span>
+                                    <span>€3,450.00</span>
                                 </li>
                             </ul>
                         </CardContent>

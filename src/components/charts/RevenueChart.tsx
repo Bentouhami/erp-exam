@@ -19,7 +19,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <div className="bg-white p-3 rounded-lg shadow-md border">
                 <p className="font-semibold mb-2">{label}</p>
                 <p className="text-sm text-[#82ca9d]">
-                    Revenue: <span className="font-medium">${payload[0].value.toFixed(2)}</span>
+                    Revenue: <span className="font-medium">€{payload[0].value.toFixed(2)}</span>
                 </p>
             </div>
         );
@@ -47,7 +47,7 @@ export function RevenueChart({ data, timeRange }: RevenueChartProps) {
                             tick={{ fill: '#666' }}
                         />
                         <YAxis
-                            tickFormatter={(value) => `$${value.toFixed(0)}`}
+                            tickFormatter={(value) => `€${value.toFixed(0)}`}
                             tick={{ fill: '#666' }}
                         />
                         <Tooltip content={<CustomTooltip />} />
