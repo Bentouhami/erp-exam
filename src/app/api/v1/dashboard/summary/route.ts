@@ -4,6 +4,7 @@
 import {NextRequest, NextResponse} from "next/server";
 import prisma from "@/lib/db";
 import {auth} from "@/auth/auth";
+import {checkAuthStatus} from "@/lib/utils/auth-helper";
 
 /**
  * @method GET - Fetches summary data for the dashboard
@@ -21,17 +22,13 @@ export async function GET(req: NextRequest) {
             }
         );
     }
+    const {isAuthenticated, role} = await checkAuthStatus();
+    if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'ACCOUNTANT') return NextResponse.json({error: 'You must be an admin or an accountant to access this route.'}, {status: 401});
 
-    // verify if the user is authenticated using Auth.js V5 in server side
-    const session = await auth()
 
-    if (!session?.user) return NextResponse.json({message: 'Unauthorized'},
-        {
-            status: 401,
-            headers: {'Cache-Control': 'no-store, max-age=0'}
-        }
-    );
-    // const user = session.user;
+    console.log("log ====> GET method called in path src/app/api/v1/dashboard/summary/route.ts");
+
 
     try {
         const totalInvoices = await prisma.invoice.count();
@@ -43,7 +40,10 @@ export async function GET(req: NextRequest) {
             },
         });
 
-// Extract the total sum value
+        console.log("log ====> totalRevenue in GET method in path src/app/api/v1/dashboard/summary/route.ts:", totalRevenue);
+
+
+        // Extract the total sum value
         const totalAmountSum = totalRevenue._sum.totalAmount ?? 0;
 
         return NextResponse.json({totalInvoices, totalCustomers, totalItems, totalAmountSum}, {

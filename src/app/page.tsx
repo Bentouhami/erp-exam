@@ -39,7 +39,13 @@ export default function Dashboard() {
             try {
                 const response = await axios.get(`${API_DOMAIN}/dashboard/summary`);
                 if (response.status === 200 && response.data) {
-                    setSummary(response.data);
+                    setSummary({
+                        totalInvoices: response.data.totalInvoices,
+                        totalCustomers: response.data.totalCustomers,
+                        totalItems: response.data.totalItems,
+                        totalRevenue: response.data.totalAmountSum // Fix this key
+                    });
+
                 }
             } catch (error) {
                 console.error('Error fetching summary data:', error);
@@ -93,7 +99,7 @@ export default function Dashboard() {
                                     <Euro className="h-4 w-4 text-muted-foreground"/>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">€{summary.totalRevenue}</div>
+                                    <div className="text-2xl font-bold">${summary.totalRevenue}</div>
                                     <p className="text-xs text-muted-foreground">+20.1% from last month</p>
                                 </CardContent>
                             </Card>
@@ -122,15 +128,15 @@ export default function Dashboard() {
                             <ul className="space-y-4">
                                 <li className="flex justify-between">
                                     <span>Invoice #INV-001</span>
-                                    <span>€2,300.00</span>
+                                    <span>$2,300.00</span>
                                 </li>
                                 <li className="flex justify-between">
                                     <span>Invoice #INV-002</span>
-                                    <span>€1,200.00</span>
+                                    <span>$1,200.00</span>
                                 </li>
                                 <li className="flex justify-between">
                                     <span>Invoice #INV-003</span>
-                                    <span>€3,450.00</span>
+                                    <span>$3,450.00</span>
                                 </li>
                             </ul>
                         </CardContent>

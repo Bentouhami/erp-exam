@@ -1,9 +1,23 @@
 // path: src/app/api/v1/dashboard/monthly-summary/route.ts
 
-import {NextResponse} from 'next/server';
+import {NextRequest, NextResponse} from 'next/server';
 import {getMonthlyCustomersSummary, getMonthlyInvoiceSummary} from "@/services/backend_Services/Bk_InvoiceService";
+import {checkAuthStatus} from "@/lib/utils/auth-helper";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+
+
+    if (request.method !== 'GET') {
+        return NextResponse.json({error: 'Method not allowed'}, {status: 405});
+    }
+
+    console.log("log ====> GET method called in path src/app/api/v1/dashboard/monthly-summary/route.ts");
+
+    // Verify if the user is authenticated
+    const {isAuthenticated, role} = await checkAuthStatus();
+    if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'ACCOUNTANT') return NextResponse.json({error: 'You must be an admin or an accountant to access this route.'}, {status: 401});
+
     try {
         // get the monthly invoice summary
         const invoiceMonthlySummary = await getMonthlyInvoiceSummary();

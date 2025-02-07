@@ -1,40 +1,47 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import {usePathname, useRouter} from 'next/navigation';
 import {
-    Home, FileText, Users, Package, Settings, ChevronLeft, ChevronRight, Menu,
-    Sun, Moon, Laptop, Bell, LogOut, LogIn
+    Bell,
+    ChevronLeft,
+    ChevronRight,
+    FileText,
+    Home,
+    Laptop,
+    LogIn,
+    LogOut,
+    Menu,
+    Moon,
+    Package,
+    Settings,
+    Sun,
+    Users
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useTheme } from 'next-themes';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession, signOut } from 'next-auth/react';
-import { DOMAIN } from '@/lib/utils/constants';
+import {Button} from '@/components/ui/button';
+import {cn} from '@/lib/utils';
+import {useTheme} from 'next-themes';
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,} from "@/components/ui/dropdown-menu";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
+import {signOut, useSession} from 'next-auth/react';
+import {DOMAIN} from '@/lib/utils/constants';
 
 const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
-    const { theme, setTheme } = useTheme();
-    const { data: session } = useSession();
+    const {theme, setTheme} = useTheme();
+    const {data: session} = useSession();
     const router = useRouter();
 
     const menuItems = [
-        { name: 'Dashboard', icon: Home, path: '/dashboard' },
-        { name: 'Invoices', icon: FileText, path: '/dashboard/invoices' },
-        { name: 'Users', icon: Users, path: '/dashboard/users' },
-        { name: 'Items', icon: Package, path: '/dashboard/items' },
-        { name: 'Settings', icon: Settings, path: '/dashboard/settings' },
+        {name: 'Dashboard', icon: Home, path: '/dashboard'},
+        {name: 'Invoices', icon: FileText, path: '/dashboard/invoices'},
+        {name: 'Users', icon: Users, path: '/dashboard/users'},
+        {name: 'Items', icon: Package, path: '/dashboard/items'},
+        {name: 'Settings', icon: Settings, path: '/dashboard/settings'},
     ];
 
     // Filter menu items based on user role
@@ -59,9 +66,9 @@ const Sidebar = () => {
     }, [pathname]);
 
     const themeOptions = [
-        { value: 'light', icon: Sun, label: 'Light' },
-        { value: 'dark', icon: Moon, label: 'Dark' },
-        { value: 'system', icon: Laptop, label: 'System' }
+        {value: 'light', icon: Sun, label: 'Light'},
+        {value: 'dark', icon: Moon, label: 'Dark'},
+        {value: 'system', icon: Laptop, label: 'System'}
     ];
 
     if (!mounted) return null;
@@ -69,20 +76,23 @@ const Sidebar = () => {
     return (
         <div>
             {/* Mobile Navbar */}
-            <div className="md:hidden fixed top-0 left-0 w-full bg-background z-50 border-b px-4 py-3 flex items-center justify-between backdrop-blur-lg bg-opacity-90">
+            <div
+                className="md:hidden fixed top-0 left-0 w-full bg-background z-50 border-b px-4 py-3 flex items-center justify-between backdrop-blur-lg bg-opacity-90">
                 <Button variant="ghost" size="icon" onClick={toggleMobileSidebar}
                         className="hover:bg-secondary">
-                    <Menu size={20} />
+                    <Menu size={20}/>
                 </Button>
                 <div className="flex items-center space-x-4">
-                    <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                        Gest Fac
-                    </h1>
+                    <Link href={`/`}>
+                        <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                            Gest Fac
+                        </h1>
+                    </Link>
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
-                            <Bell size={20} />
+                            <Bell size={20}/>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-64">
@@ -109,9 +119,11 @@ const Sidebar = () => {
                         "flex items-center space-x-3 transition-all duration-300",
                         isCollapsed && "opacity-0 w-0 hidden"
                     )}>
-                        <h1 className="font-bold text-2xl bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                            Gest Fac
-                        </h1>
+                        <Link href={`/`}>
+                            <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                                Gest Fac
+                            </h1>
+                        </Link>
                     </div>
                     <Button
                         variant="ghost"
@@ -119,7 +131,7 @@ const Sidebar = () => {
                         onClick={toggleSidebar}
                         className="hidden md:flex hover:bg-secondary"
                     >
-                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                        {isCollapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}
                     </Button>
                 </div>
 
@@ -134,7 +146,7 @@ const Sidebar = () => {
                             isCollapsed && "flex-col space-x-0 space-y-2"
                         )}>
                             <Avatar className="h-10 w-10 border-2 border-primary/20">
-                                <AvatarImage src={session?.user?.image || undefined} />
+                                <AvatarImage src={session?.user?.image || undefined}/>
                                 <AvatarFallback>
                                     {session?.user?.name?.[0] || 'U'}
                                 </AvatarFallback>
@@ -154,7 +166,7 @@ const Sidebar = () => {
                             isCollapsed && "flex-col space-x-0 space-y-2"
                         )}>
                             <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary/10">
-                                <LogIn size={20} className="text-primary" />
+                                <LogIn size={20} className="text-primary"/>
                             </div>
                             {!isCollapsed && (
                                 <div className="space-y-1">
@@ -194,7 +206,7 @@ const Sidebar = () => {
                                             "transition-transform duration-200",
                                             isActive ? "text-primary" : "text-muted-foreground",
                                             "group-hover:scale-110"
-                                        )} />
+                                        )}/>
                                         {!isCollapsed && (
                                             <span className="ml-3">{item.name}</span>
                                         )}
@@ -216,7 +228,8 @@ const Sidebar = () => {
                                     isCollapsed ? "justify-center" : "justify-start"
                                 )}
                             >
-                                {theme === 'dark' ? <Moon size={20} /> : theme === 'light' ? <Sun size={20} /> : <Laptop size={20} />}
+                                {theme === 'dark' ? <Moon size={20}/> : theme === 'light' ? <Sun size={20}/> :
+                                    <Laptop size={20}/>}
                                 {!isCollapsed && <span className="ml-3">Theme</span>}
                             </Button>
                         </DropdownMenuTrigger>
@@ -229,7 +242,7 @@ const Sidebar = () => {
                                         onClick={() => setTheme(option.value)}
                                         className="cursor-pointer"
                                     >
-                                        <Icon size={16} className="mr-2" />
+                                        <Icon size={16} className="mr-2"/>
                                         <span>{option.label}</span>
                                     </DropdownMenuItem>
                                 );
@@ -244,9 +257,9 @@ const Sidebar = () => {
                                 "w-full hover:bg-destructive/10 hover:text-destructive",
                                 isCollapsed ? "justify-center" : "justify-start"
                             )}
-                            onClick={() => signOut({ redirectTo: '/' })}
+                            onClick={() => signOut({redirectTo: '/'})}
                         >
-                            <LogOut size={20} />
+                            <LogOut size={20}/>
                             {!isCollapsed && <span className="ml-3">Logout</span>}
                         </Button>
                     ) : (
@@ -258,7 +271,7 @@ const Sidebar = () => {
                             )}
                             onClick={() => router.push(`${DOMAIN}/auth`)}
                         >
-                            <LogIn size={20} />
+                            <LogIn size={20}/>
                             {!isCollapsed && <span className="ml-3">Log in</span>}
                         </Button>
                     )}
