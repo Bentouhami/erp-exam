@@ -220,11 +220,11 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
 
     useEffect(() => {
         // When the customer changes, recalc the totals.
-        calculateTotals();
+         calculateTotals();
     }, [selectedUserId]);
     useEffect(() => {
         // Recalculate totals whenever the items, selected customer, or items list change.
-        calculateTotals()
+            calculateTotals()
     }, [form.watch('items'), form.watch('userId'), itemsList])
 
 
@@ -415,7 +415,7 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                                                         selectedItemId={field.value}
                                                         onSelect={(value) => {
                                                             field.onChange(value);
-                                                            calculateTotals(); // Trigger recalculation immediately
+                                                            calculateTotals(); // Recalculate
                                                         }}
                                                         onItemSelected={() => calculateTotals()}
                                                     />
@@ -427,18 +427,21 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                                             <FormField
                                                 control={form.control}
                                                 name={`items.${index}.quantity`}
-                                                render={({field}) => (
+                                                render={({ field }) => (
                                                     <Input
                                                         type="number"
                                                         min="1"
                                                         {...field}
-                                                        onChange={(e) =>
-                                                            field.onChange(parseInt(e.target.value))
-                                                        }
+                                                        onChange={(e) => {
+                                                            const newQuantity = parseInt(e.target.value) || 1;
+                                                            field.onChange(newQuantity);
+                                                            calculateTotals(); //   Recalculate
+                                                        }}
                                                     />
                                                 )}
                                             />
                                         </TableCell>
+
                                         <TableCell>
                                             <FormField
                                                 control={form.control}
