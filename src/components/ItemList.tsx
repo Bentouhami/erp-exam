@@ -200,14 +200,6 @@ export default function ItemList() {
                         className="max-w-sm"
                     />
 
-                    {/* Supplier Reference Filter */}
-                    <Input
-                        type="text"
-                        placeholder="Supplier Reference"
-                        value={supplierReference}
-                        onChange={(e) => setSupplierReference(e.target.value)}
-                        className="max-w-sm"
-                    />
                     {/* Unit Filter */}
                     <select
                         value={selectedUnit}
