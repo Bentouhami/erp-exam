@@ -11,6 +11,8 @@ interface ItemDetailsSectionProps {
 
 export default function ItemDetailsSection({ control, showItemNumber }: ItemDetailsSectionProps) {
     console.log('Item Number:', control._formValues.itemNumber); // Debugging log
+    console.log('Supplier Reference:', control._formValues.supplierReference); // Debugging log
+
 
     return (
         <div className="space-y-4">
@@ -26,6 +28,24 @@ export default function ItemDetailsSection({ control, showItemNumber }: ItemDeta
                             </FormControl>
                             <FormMessage />
                         </FormItem>
+                    )}
+                />
+            )}
+
+            {showItemNumber && (
+                <FormField
+                    control={control}
+                    name="supplierReference"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Supplier Reference</FormLabel>
+                            <FormControl>
+                                <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+
+
                     )}
                 />
             )}

@@ -6,20 +6,20 @@ import {StockMovementCreateDTO, UpdateStockMovementDTO} from "@/services/dtos/St
 
 
 
-export async function createStockMovement(data: StockMovementCreateDTO)  {
+export async function createStockMovement(data: StockMovementCreateDTO, itemLabel: String)  {
     // switch (data.MovementTypeDTO) to set the right description
     switch (data.movementType) {
         case "PURCHASE":
-            data.description = "New items(s) added";
+            data.description = `"${itemLabel}" Item(s) added to stock`;
             break;
         case "SALE":
-            data.description = "Item(s) sold";
+            data.description = `Item(s) ${itemLabel} sold`;
             break;
         case "RETURN":
-            data.description = "Item(s) returned";
+            data.description = `Item(s) ${itemLabel} returned`;
             break;
         default:
-            data.description = "Unknown movement type";
+            data.description = `Item(s) ${itemLabel} added to stock`;
             break;
     }
 

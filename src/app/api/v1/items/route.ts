@@ -16,6 +16,10 @@ const validateItemData = (data: any) => {
     if (!data.purchasePrice || isNaN(data.purchasePrice)) errors.push('Purchase price must be a valid number.');
     if (!data.unitId) errors.push('Unit ID is required.');
     if (!data.classId) errors.push('Class ID is required.');
+    if (!data.stockQuantity || isNaN(data.stockQuantity)) errors.push('Stock quantity must be a valid number.');
+    if (!data.minQuantity || isNaN(data.minQuantity)) errors.push('Minimum quantity must be a valid number.');
+    if(!data.supplierReference) errors.push('Supplier reference is required.');
+
     return errors;
 };
 
@@ -41,6 +45,7 @@ export async function GET(request: NextRequest) {
                     ? {
                         OR: [
                             { itemNumber: { contains: search, mode: 'insensitive' } },
+                            { supplierReference: { contains: search, mode: 'insensitive' } },
                             { label: { contains: search, mode: 'insensitive' } },
                             { description: { contains: search, mode: 'insensitive' } },
                         ],
@@ -62,6 +67,7 @@ export async function GET(request: NextRequest) {
             retailPrice: Number(item.retailPrice),
             purchasePrice: Number(item.purchasePrice),
         }));
+        console.log("log ====> formattedItems:", formattedItems);
 
         return NextResponse.json(formattedItems);
     } catch (error) {
@@ -79,6 +85,19 @@ export async function POST(request: NextRequest) {
     if (request.method !== 'POST') {
         return NextResponse.json({error: 'Method not allowed'}, {status: 405})
     }
+    const { isAuthenticated , userId, email, role } = await checkAuthStatus();
+    if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
+    if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return NextResponse.json({error: 'You must be an admin.'}, {status: 401});
+
+    // check the admin exists
+    const admin = await prisma.user.findUnique({
+        where: {
+            id: userId,
+            email: email,
+        },
+    });
+
+    if(!admin) return NextResponse.json({error: 'Admin not found'}, {status: 401});
 
     if (!accessControlHelper) {
         return NextResponse.json({error: 'Access denied'}, {status: 403})
@@ -124,6 +143,7 @@ export async function POST(request: NextRequest) {
         const newItem = await prisma.item.create({
             data: {
                 itemNumber: body.itemNumber,
+                supplierReference: body.supplierReference,
                 label: body.label,
                 description: body.description,
                 retailPrice: body.retailPrice,
@@ -144,19 +164,7 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({error: 'Failed to create item'}, {status: 500});
         }
-        const { isAuthenticated , userId, email, role } = await checkAuthStatus();
-        if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
-        if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return NextResponse.json({error: 'You must be an admin.'}, {status: 401});
 
-        // check the admin exists
-        const admin = await prisma.user.findUnique({
-            where: {
-                id: userId,
-                email: email,
-            },
-        });
-
-        if(!admin) return NextResponse.json({error: 'Admin not found'}, {status: 401});
 
         const StockMovementCreateDTO = {
             itemId : newItem.id,
@@ -166,7 +174,7 @@ export async function POST(request: NextRequest) {
             date : new Date()
         };
 
-        await  createStockMovement(StockMovementCreateDTO);
+        await  createStockMovement(StockMovementCreateDTO, newItem.label);
 
         return NextResponse.json(newItem, {status: 201});
     } catch (error) {

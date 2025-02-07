@@ -21,7 +21,7 @@ type User = {
     mobile?: string;
     createdAt: string;
     countryId?: number;
-    countryName?: string; // New field for display
+    countryName?: string;
 };
 
 interface CustomerSelectProps {
@@ -33,12 +33,22 @@ interface CustomerSelectProps {
 export default function CustomerSelect({ customersList, selectedUserId, onSelect }: CustomerSelectProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isOpen, setIsOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const customersPerPage = 5; // ✅ Adjust number of customers per page
 
+    // Filter customers based on search term
     const filteredUsers = customersList.filter(user =>
         user.userNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.vatNumber && user.vatNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (user.countryName && user.countryName.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredUsers.length / customersPerPage);
+    const paginatedUsers = filteredUsers.slice(
+        (currentPage - 1) * customersPerPage,
+        currentPage * customersPerPage
     );
 
     const selectedUser = customersList.find(u => u.id === selectedUserId);
@@ -50,7 +60,6 @@ export default function CustomerSelect({ customersList, selectedUserId, onSelect
                     {selectedUser
                         ? `${selectedUser.name} (${selectedUser.userNumber}) - ${selectedUser.countryName || 'Unknown'}`
                         : 'Select a customer'}
-
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -60,7 +69,10 @@ export default function CustomerSelect({ customersList, selectedUserId, onSelect
                 <Input
                     placeholder="Search by customer number, name, VAT number, or country..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1); // Reset to first page on new search
+                    }}
                     className="mb-4"
                 />
                 <Table>
@@ -75,7 +87,7 @@ export default function CustomerSelect({ customersList, selectedUserId, onSelect
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredUsers.map((user) => (
+                        {paginatedUsers.map((user) => (
                             <TableRow
                                 key={user.id}
                                 className="cursor-pointer hover:bg-gray-100"
@@ -94,6 +106,25 @@ export default function CustomerSelect({ customersList, selectedUserId, onSelect
                         ))}
                     </TableBody>
                 </Table>
+
+                {/* Pagination Controls */}
+                <div className="flex justify-between items-center mt-4">
+                    <Button
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <span>
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage >= totalPages}
+                    >
+                        Next
+                    </Button>
+                </div>
             </DialogContent>
         </Dialog>
     );

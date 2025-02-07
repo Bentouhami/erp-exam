@@ -17,6 +17,7 @@ import axios from 'axios';
 
 const itemSchema = z.object({
     itemNumber: z.string(),
+    supplierReference: z.string().optional(),
     label: z.string().min(1, 'Label is required'),
     description: z.string().optional(),
     retailPrice: z.number().min(0, 'Retail price must be a positive number'),
@@ -43,6 +44,7 @@ export default function ItemForm({ itemId }: ItemFormProps) {
         resolver: zodResolver(itemSchema),
         defaultValues: {
             itemNumber: '',
+            supplierReference: '',
             label: '',
             description: '',
             purchasePrice: 0,
@@ -74,6 +76,7 @@ export default function ItemForm({ itemId }: ItemFormProps) {
 
         fetchData();
     }, [itemId]);
+
 
     const fetchItem = async (id: number) => {
         try {

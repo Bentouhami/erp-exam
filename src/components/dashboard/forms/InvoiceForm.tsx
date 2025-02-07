@@ -200,7 +200,7 @@ export default function InvoiceForm({invoiceId}: InvoiceFormProps) {
                 // Group VAT amounts by percentage
                 const vatKey = `${vatPercent}%`;
                 if (!groupedVAT[vatKey]) {
-                    groupedVAT[vatKey] = { vatBaseAmount: 0, vatAmount: 0 };
+                    groupedVAT[vatKey] = {vatBaseAmount: 0, vatAmount: 0};
                 }
                 groupedVAT[vatKey].vatBaseAmount += lineHT;
                 groupedVAT[vatKey].vatAmount += lineVAT;

@@ -4,6 +4,7 @@ import fs from "fs";
 
 const prisma = new PrismaClient();
 
+
 async function seedDatabase() {
     try {
         console.log(' 🌍 Seeding the database...');
@@ -30,9 +31,7 @@ async function seedDatabase() {
         const belgiumCities = Array.from(new Map(belgiumJson
             .filter((item) => item.smun_name_fr && item.postcode)
             .map((item) => [item.postcode, {
-                cityCode: item.postcode,
-                name: item.smun_name_fr,
-                countryId: belgium.id
+                cityCode: item.postcode, name: item.smun_name_fr, countryId: belgium.id
             },])).values());
 
         console.log(`Inserting ${belgiumCities.length} unique cities for Belgium...`);
@@ -56,9 +55,7 @@ async function seedDatabase() {
         const franceCities = Array.from(new Map(franceJson.cities
             .filter((item) => item.label && item.zip_code)
             .map((item) => [item.zip_code, {
-                cityCode: item.zip_code,
-                name: item.label,
-                countryId: france.id
+                cityCode: item.zip_code, name: item.label, countryId: france.id
             },])).values());
 
         console.log(`Inserting ${franceCities.length} unique cities for France...`);
@@ -78,22 +75,14 @@ async function seedDatabase() {
         //region VAT Rates by country and item class
         const vatRates = [// Belgium
             {countryId: belgium.id, vatPercent: 6.00, itemClassLabel: 'Alimentation'}, {
-                countryId: belgium.id,
-                vatPercent: 21.00,
-                itemClassLabel: 'Électronique'
+                countryId: belgium.id, vatPercent: 21.00, itemClassLabel: 'Électronique'
             }, {countryId: belgium.id, vatPercent: 21.00, itemClassLabel: 'Mobilier'}, {
-                countryId: belgium.id,
-                vatPercent: 21.00,
-                itemClassLabel: 'Vêtements'
+                countryId: belgium.id, vatPercent: 21.00, itemClassLabel: 'Vêtements'
             }, {countryId: belgium.id, vatPercent: 6.00, itemClassLabel: 'Livres'}, // France
             {countryId: france.id, vatPercent: 5.50, itemClassLabel: 'Alimentation'}, {
-                countryId: france.id,
-                vatPercent: 20.00,
-                itemClassLabel: 'Électronique'
+                countryId: france.id, vatPercent: 20.00, itemClassLabel: 'Électronique'
             }, {countryId: france.id, vatPercent: 20.00, itemClassLabel: 'Mobilier'}, {
-                countryId: france.id,
-                vatPercent: 20.00,
-                itemClassLabel: 'Vêtements'
+                countryId: france.id, vatPercent: 20.00, itemClassLabel: 'Vêtements'
             }, {countryId: france.id, vatPercent: 5.50, itemClassLabel: 'Livres'},];
 
         for (const vatRate of vatRates) {
@@ -131,118 +120,115 @@ async function seedDatabase() {
 
         //region Items
         // Mock data for 10 items
-        const items = [// --- The original 12 from your new script ---
-            {
-                label: "Sport Shoes",
-                description: "High-quality running shoes",
-                retailPrice: 80.00,
-                purchasePrice: 50.00,
-                stockQuantity: 100,
-                minQuantity: 10,
-                classLabel: "Vêtements",   // Clothing
-                unitName: "Pièce"
-            }, {
-                label: "Office Chair",
-                description: "Ergonomic office chair",
-                retailPrice: 250.00,
-                purchasePrice: 180.00,
-                stockQuantity: 50,
-                minQuantity: 5,
-                classLabel: "Mobilier",    // Furniture
-                unitName: "Pièce"
-            }, {
-                label: "Desk Lamp",
-                description: "Adjustable desk lamp",
-                retailPrice: 60.00,
-                purchasePrice: 30.00,
-                stockQuantity: 200,
-                minQuantity: 15,
-                classLabel: "Électronique",
-                unitName: "Pièce"
-            }, {
-                label: "Bluetooth Headphones",
-                description: "Noise-cancelling headphones",
-                retailPrice: 180.00,
-                purchasePrice: 100.00,
-                stockQuantity: 80,
-                minQuantity: 10,
-                classLabel: "Électronique",
-                unitName: "Pièce"
-            }, {
-                label: "Standing Desk",
-                description: "Adjustable standing desk",
-                retailPrice: 400.00,
-                purchasePrice: 250.00,
-                stockQuantity: 20,
-                minQuantity: 2,
-                classLabel: "Mobilier",
-                unitName: "Pièce"
-            }, {
-                label: "Gaming Chair",
-                description: "Comfortable gaming chair",
-                retailPrice: 350.00,
-                purchasePrice: 200.00,
-                stockQuantity: 40,
-                minQuantity: 5,
-                classLabel: "Mobilier",
-                unitName: "Pièce"
-            }, {
-                label: "Monitor 24 inch",
-                description: "Full HD LED monitor",
-                retailPrice: 220.00,
-                purchasePrice: 120.00,
-                stockQuantity: 60,
-                minQuantity: 8,
-                classLabel: "Électronique",
-                unitName: "Pièce"
-            }, {
-                label: "Keyboard",
-                description: "Mechanical keyboard",
-                retailPrice: 150.00,
-                purchasePrice: 80.00,
-                stockQuantity: 90,
-                minQuantity: 10,
-                classLabel: "Électronique",
-                unitName: "Pièce"
-            }, {
-                label: "Wireless Mouse",
-                description: "Ergonomic wireless mouse",
-                retailPrice: 70.00,
-                purchasePrice: 40.00,
-                stockQuantity: 150,
-                minQuantity: 20,
-                classLabel: "Électronique",
-                unitName: "Pièce"
-            }, {
-                label: "Printer",
-                description: "All-in-one wireless printer",
-                retailPrice: 300.00,
-                purchasePrice: 180.00,
-                stockQuantity: 30,
-                minQuantity: 3,
-                classLabel: "Électronique",
-                unitName: "Pièce"
-            }, {
-                label: "Book",
-                description: "Best-selling novel",
-                retailPrice: 20.00,
-                purchasePrice: 10.00,
-                stockQuantity: 30,
-                minQuantity: 5,
-                classLabel: "Livres",
-                unitName: "Pièce"
-            }, {
-                label: "Bread",
-                description: "Fresh bread",
-                retailPrice: 5.00,
-                purchasePrice: 3.00,
-                stockQuantity: 50,
-                minQuantity: 5,
-                classLabel: "Alimentation",
-                unitName: "Kilogramme"
-            },
-
-            // --- 10 Missing items from the old script ---
+        const items = [{
+            label: "Sport Shoes",
+            description: "High-quality running shoes",
+            retailPrice: 80.00,
+            purchasePrice: 50.00,
+            stockQuantity: 100,
+            minQuantity: 10,
+            classLabel: "Vêtements",   // Clothing
+            unitName: "Pièce"
+        }, {
+            label: "Office Chair",
+            description: "Ergonomic office chair",
+            retailPrice: 250.00,
+            purchasePrice: 180.00,
+            stockQuantity: 50,
+            minQuantity: 5,
+            classLabel: "Mobilier",    // Furniture
+            unitName: "Pièce"
+        }, {
+            label: "Desk Lamp",
+            description: "Adjustable desk lamp",
+            retailPrice: 60.00,
+            purchasePrice: 30.00,
+            stockQuantity: 200,
+            minQuantity: 15,
+            classLabel: "Électronique",
+            unitName: "Pièce"
+        }, {
+            label: "Bluetooth Headphones",
+            description: "Noise-cancelling headphones",
+            retailPrice: 180.00,
+            purchasePrice: 100.00,
+            stockQuantity: 80,
+            minQuantity: 10,
+            classLabel: "Électronique",
+            unitName: "Pièce"
+        }, {
+            label: "Standing Desk",
+            description: "Adjustable standing desk",
+            retailPrice: 400.00,
+            purchasePrice: 250.00,
+            stockQuantity: 20,
+            minQuantity: 2,
+            classLabel: "Mobilier",
+            unitName: "Pièce"
+        }, {
+            label: "Gaming Chair",
+            description: "Comfortable gaming chair",
+            retailPrice: 350.00,
+            purchasePrice: 200.00,
+            stockQuantity: 40,
+            minQuantity: 5,
+            classLabel: "Mobilier",
+            unitName: "Pièce"
+        }, {
+            label: "Monitor 24 inch",
+            description: "Full HD LED monitor",
+            retailPrice: 220.00,
+            purchasePrice: 120.00,
+            stockQuantity: 60,
+            minQuantity: 8,
+            classLabel: "Électronique",
+            unitName: "Pièce"
+        }, {
+            label: "Keyboard",
+            description: "Mechanical keyboard",
+            retailPrice: 150.00,
+            purchasePrice: 80.00,
+            stockQuantity: 90,
+            minQuantity: 10,
+            classLabel: "Électronique",
+            unitName: "Pièce"
+        }, {
+            label: "Wireless Mouse",
+            description: "Ergonomic wireless mouse",
+            retailPrice: 70.00,
+            purchasePrice: 40.00,
+            stockQuantity: 150,
+            minQuantity: 20,
+            classLabel: "Électronique",
+            unitName: "Pièce"
+        }, {
+            label: "Printer",
+            description: "All-in-one wireless printer",
+            retailPrice: 300.00,
+            purchasePrice: 180.00,
+            stockQuantity: 30,
+            minQuantity: 3,
+            classLabel: "Électronique",
+            unitName: "Pièce"
+        }, {
+            label: "Book",
+            description: "Best-selling novel",
+            retailPrice: 20.00,
+            purchasePrice: 10.00,
+            stockQuantity: 30,
+            minQuantity: 5,
+            classLabel: "Livres",
+            unitName: "Pièce"
+        }, {
+            label: "Bread",
+            description: "Fresh bread",
+            retailPrice: 5.00,
+            purchasePrice: 3.00,
+            stockQuantity: 50,
+            minQuantity: 5,
+            classLabel: "Alimentation",
+            unitName: "Kilogramme"
+        },
             {
                 label: "Smartwatch",
                 description: "Waterproof smartwatch with GPS.",
@@ -336,8 +322,14 @@ async function seedDatabase() {
             }];
 
         console.log(' 🔥 Seeding items...');
-        for (const item of items) {
+
+
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            item.supplierReference = generateSupplierReference(i);
             const itemNumber = await generateItemNumber();
+
 
             // Find the corresponding unit and item class
             const unit = await prisma.unit.findFirst({
@@ -356,6 +348,7 @@ async function seedDatabase() {
                 await prisma.item.create({
                     data: {
                         itemNumber,
+                        supplierReference: item.supplierReference,
                         label: item.label,
                         description: item.description,
                         purchasePrice: item.purchasePrice,
@@ -450,6 +443,10 @@ async function generateItemNumber() {
     }
 
     return `ITM${year}${month}${sequenceNumber.toString().padStart(6, '0')}`;
+}
+
+function generateSupplierReference(index) {
+    return `REF-${String(index + 1).padStart(7, '0')}`;
 }
 
 async function saltAndHashPassword(password) {

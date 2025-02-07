@@ -23,6 +23,7 @@ import {API_DOMAIN} from "@/lib/utils/constants";
 type Item = {
     id: number;
     itemNumber: string;
+    supplierReference: string;
     label: string;
     description: string;
     retailPrice: number;
@@ -47,8 +48,9 @@ type SortConfig = {
 export default function ItemList() {
     const [items, setItems] = useState<Item[]>([]);
     const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+    const [supplierReference, setSupplierReference] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedVat, setSelectedVat] = useState<string>('');
+    // const [selectedVat, setSelectedVat] = useState<string>('');
     const [selectedUnit, setSelectedUnit] = useState<string>('');
     const [selectedClass, setSelectedClass] = useState<string>('');
     const [priceRange, setPriceRange] = useState({min: 0, max: 1000});
@@ -64,7 +66,7 @@ export default function ItemList() {
 
     useEffect(() => {
         applyFilters();
-    }, [searchTerm, selectedVat, selectedUnit, selectedClass, priceRange, sortConfig, items]);
+    }, [searchTerm, selectedUnit, selectedClass, priceRange, sortConfig, items]);
 
     const fetchItems = async () => {
         setLoading(true);
@@ -94,6 +96,7 @@ export default function ItemList() {
             filtered = filtered.filter(
                 (item) =>
                     item.itemNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    item.supplierReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     item.description.toLowerCase().includes(searchTerm.toLowerCase())
             );
@@ -197,20 +200,14 @@ export default function ItemList() {
                         className="max-w-sm"
                     />
 
-                    {/*/!* VAT Filter *!/*/}
-                    {/*<select*/}
-                    {/*    value={selectedVat}*/}
-                    {/*    onChange={(e) => setSelectedVat(e.target.value)}*/}
-                    {/*    className="max-w-sm"*/}
-                    {/*>*/}
-                    {/*    <option value="">All VAT Types</option>*/}
-                    {/*    {uniqueVats.map((vat) => (*/}
-                    {/*        <option key={vat.id} value={vat.id}>*/}
-                    {/*            {vat.vatPercent}% ({vat.vatType})*/}
-                    {/*        </option>*/}
-                    {/*    ))}*/}
-                    {/*</select>*/}
-
+                    {/* Supplier Reference Filter */}
+                    <Input
+                        type="text"
+                        placeholder="Supplier Reference"
+                        value={supplierReference}
+                        onChange={(e) => setSupplierReference(e.target.value)}
+                        className="max-w-sm"
+                    />
                     {/* Unit Filter */}
                     <select
                         value={selectedUnit}
@@ -261,6 +258,8 @@ export default function ItemList() {
                     />
                 </div>
 
+
+
                 {/* Table */}
                 <Table>
                     <TableHeader>
@@ -271,11 +270,16 @@ export default function ItemList() {
                                     <ArrowUpDown className="ml-2 h-4 w-4"/>
                                 </Button>
                             </TableHead>
+                            <TableHead>
+                                <Button variant="ghost" onClick={() => handleSort('supplierReference')}>
+                                    Supplier Reference
+                                    <ArrowUpDown className="ml-2 h-4 w-4"/>
+                                </Button>
+                            </TableHead>
                             <TableHead>Label</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Retail Price (€)</TableHead>
                             <TableHead>Purchase Price (€)</TableHead>
-                            {/*<TableHead>VAT</TableHead>*/}
                             <TableHead>Unit</TableHead>
                             <TableHead>Class</TableHead>
                             <TableHead>Stock</TableHead>
@@ -286,13 +290,11 @@ export default function ItemList() {
                         {paginatedItems.map((item) => (
                             <TableRow key={item.id}>
                                 <TableCell>{item.itemNumber}</TableCell>
+                                <TableCell>{item.supplierReference}</TableCell>
                                 <TableCell>{item.label}</TableCell>
                                 <TableCell>{item.description}</TableCell>
                                 <TableCell>{item.retailPrice.toFixed(2)}</TableCell>
                                 <TableCell>{item.purchasePrice.toFixed(2)}</TableCell>
-                                {/*<TableCell>*/}
-                                {/*    {item.vatRate.vatPercent}% ({item.vatRate.vatType})*/}
-                                {/*</TableCell>*/}
                                 <TableCell>{item.unit.name}</TableCell>
                                 <TableCell>{item.itemClass.label}</TableCell>
                                 <TableCell>
