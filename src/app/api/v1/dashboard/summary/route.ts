@@ -1,27 +1,16 @@
 // path: src/app/api/v1/dashboard/summary/route.ts
-'use server'
 
-import {NextRequest, NextResponse} from "next/server";
+import { NextResponse} from "next/server";
 import prisma from "@/lib/db";
-import {auth} from "@/auth/auth";
 import {checkAuthStatus} from "@/lib/utils/auth-helper";
 
 /**
  * @method GET - Fetches summary data for the dashboard
  * @param req  - The incoming request object
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
 
-    if (req.method !== 'GET') {
-        return NextResponse.json(
-            {
-                message: 'Method not allowed'
-            }, {
-                status: 405,
-                headers: {'Cache-Control': 'no-store, max-age=0'}
-            }
-        );
-    }
+
     const {isAuthenticated, role} = await checkAuthStatus();
     if (!isAuthenticated) return NextResponse.json({error: 'You must be connected.'}, {status: 401});
     if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'ACCOUNTANT') return NextResponse.json({error: 'You must be an admin or an accountant to access this route.'}, {status: 401});
@@ -55,3 +44,5 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({message: 'Error fetching summary data'}, {status: 500, headers: {'Cache-Control': 'no-store, max-age=0'}});
     }
 }
+
+export const dynamic = "force-dynamic";
